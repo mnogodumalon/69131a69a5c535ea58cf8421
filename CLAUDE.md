@@ -361,6 +361,55 @@ mcp_shadcn_view_items_in_registries(items: ['@shadcn/card'])
 mcp_shadcn_get_item_examples_from_registries(registries: ['@shadcn'], query: 'card-demo')
 ```
 
+**⚠️ KRITISCH: Select Component - Keine leeren Strings als Values!**
+
+Radix UI's Select-Komponente (shadcn/ui) erlaubt **KEINE leeren Strings** als `value` für `SelectItem`:
+
+```typescript
+// ❌ FALSCH - Führt zu Runtime Error:
+<Select value={formData.lieferant} onValueChange={setValue}>
+  <SelectTrigger>
+    <SelectValue placeholder="Auswählen (optional)" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="">Keine Auswahl</SelectItem>  {/* ❌ VERBOTEN! */}
+    <SelectItem value="option1">Option 1</SelectItem>
+  </SelectContent>
+</Select>
+
+// ✅ RICHTIG - Für optionale Felder:
+<Select value={formData.lieferant} onValueChange={setValue}>
+  <SelectTrigger>
+    <SelectValue placeholder="Auswählen (optional)" />
+  </SelectTrigger>
+  <SelectContent>
+    {/* Kein "Keine Auswahl" Item - Placeholder zeigt optionalen Zustand */}
+    <SelectItem value="option1">Option 1</SelectItem>
+    <SelectItem value="option2">Option 2</SelectItem>
+  </SelectContent>
+</Select>
+
+// ✅ ALTERNATIV - Mit speziellem Wert statt leerem String:
+<Select value={formData.lieferant || "none"} onValueChange={setValue}>
+  <SelectTrigger>
+    <SelectValue placeholder="Auswählen" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="none">Keine Auswahl</SelectItem>  {/* ✅ OK */}
+    <SelectItem value="option1">Option 1</SelectItem>
+  </SelectContent>
+</Select>
+```
+
+**Warum?**
+- Radix UI nutzt intern leere Strings zum Löschen der Auswahl
+- `value=""` bei SelectItem führt zu: `Uncaught Error: A <Select.Item /> must have a value prop that is not an empty string`
+
+**Regel:**
+- NIEMALS `value=""` bei `<SelectItem>`
+- Für optionale Felder: Placeholder nutzen, kein "Keine Auswahl" Item
+- Alternative: Spezialwert wie `"none"` oder `"null"` verwenden
+
 ### 2. recharts für Visualisierungen
 
 Bereits installiert! Nutze:
