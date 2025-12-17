@@ -140,9 +140,27 @@ const kategorieId = extractRecordId(ausgabe.fields.kategorie);
 // Output: '690abc'
 ```
 
+**⚠️ KRITISCH: NIEMALS Record-IDs manuell extrahieren!**
+
+```typescript
+// ❌ FALSCH - Manuelle ID-Extraktion:
+const parts = url.split('/');
+const recordId = parts[parts.length - 1];
+
+// ✅ RICHTIG - Verwende IMMER extractRecordId():
+const recordId = extractRecordId(url);
+if (!recordId) return; // Null-Check nicht vergessen!
+
+// Warum wichtig?
+// - extractRecordId() verwendet Regex für robuste ID-Extraktion
+// - extractRecordId() ist null-safe und gibt null zurück wenn URL ungültig ist
+// - Manuelle Extraktion kann fehlschlagen bei URLs mit Query-Parametern oder anderen Formaten
+```
+
 **Wichtig**: 
 - Für API-Calls: `/api/rest` (wegen Proxy)
 - Für applookup-Werte: `https://my.living-apps.de/rest` (vollständige URL!)
+- **IMMER** `extractRecordId()` verwenden, niemals manuell mit `split('/')` extrahieren!
 
 ---
 
@@ -249,20 +267,28 @@ async function callLivingAppsAPI(method: string, endpoint: string, data?: any) {
 CRITICAL: applookup fields can be null/undefined in Living Apps!
 
 ```typescript
-// Helper function MUST be null-safe:
+// Helper function MUST be null-safe and use Regex for robust extraction:
 export function extractRecordId(url: string | null | undefined): string | null {
-  if (!url) return null;  // CRITICAL: Check before .split()
-  const parts = url.split('/');
-  return parts[parts.length - 1];
+  if (!url) return null;  // CRITICAL: Check for null/undefined first
+  // Extrahiere die letzten 24 Hex-Zeichen mit Regex (Living Apps Record-IDs)
+  const match = url.match(/([a-f0-9]{24})$/i);
+  return match ? match[1] : null;
 }
 
-// WRONG usage (will crash if field is null):
+// ❌ WRONG usage (will crash if field is null):
 workoutLogs.forEach((log) => {
-  const uebungId = extractRecordId(log.fields.uebung);  // ❌ Crash if null
-  logsByUebung[uebungId] = log;  // ❌ Creates "null" key
+  const uebungId = extractRecordId(log.fields.uebung);
+  logsByUebung[uebungId] = log;  // ❌ Crashes if uebungId is null
 });
 
-// RIGHT usage (defensive programming):
+// ❌ WRONG usage (manual extraction):
+workoutLogs.forEach((log) => {
+  const url = log.fields.uebung;
+  const parts = url.split('/');  // ❌ NEVER do this manually!
+  const uebungId = parts[parts.length - 1];
+});
+
+// ✅ RIGHT usage (defensive programming):
 workoutLogs.forEach((log) => {
   const uebungId = extractRecordId(log.fields.uebung);
   if (!uebungId) return;  // ✅ Skip records with missing references
@@ -272,7 +298,7 @@ workoutLogs.forEach((log) => {
   logsByUebung[uebungId].push(log);
 });
 
-// RIGHT usage for optional lookups:
+// ✅ RIGHT usage for optional lookups:
 const workoutId = extractRecordId(assignment.fields.workout);
 const workout = workoutId ? workouts.find(w => w.record_id === workoutId) : null;
 // ✅ Only search if ID exists

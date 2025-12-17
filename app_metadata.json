@@ -102,7 +102,14 @@
           "type": "lookup",
           "subtype": "select",
           "fulltype": "lookup/select",
-          "description": "One selected option of multiple available options (or `null`).\n\nThe available options are defined in the `lookup_data` attribute of this control's LivingApp.\n\nThe field value will be the key in this `lookup_data` attribute or `null`."
+          "description": "One selected option of multiple available options (or `null`).\n\nThe available options are defined in the `lookup_data` attribute of this control's LivingApp.\n\nThe field value will be the key in this `lookup_data` attribute or `null`.",
+          "lookup_data": {
+            "sehr_gut": "Sehr gut \u2b50\u2b50\u2b50\u2b50\u2b50",
+            "gut": "Gut \u2b50\u2b50\u2b50\u2b50",
+            "befriedigend": "Befriedigend \u2b50\u2b50\u2b50",
+            "ausreichend": "Ausreichend \u2b50\u2b50",
+            "mangelhaft": "Mangelhaft \u2b50"
+          }
         },
         "notizen": {
           "identifier": "notizen",
@@ -132,7 +139,8 @@
           "type": "applookup",
           "subtype": "select",
           "fulltype": "applookup/select",
-          "description": "A reference to another LivingApp record from a target lookup app (or `null`).\n\nThe field value will be a valid record URL in the form `https://<hostname>/rest/apps/<app-id>/records/<record-id>` or `null`."
+          "description": "A reference to another LivingApp record from a target lookup app (or `null`).\n\nThe field value will be a valid record URL in the form `https://<hostname>/rest/apps/<app-id>/records/<record-id>` or `null`.",
+          "lookup_app": "https://my.living-apps.de/rest/apps/69131a4ee2d56093dc1c94b0"
         },
         "produkt": {
           "identifier": "produkt",
@@ -140,7 +148,8 @@
           "type": "applookup",
           "subtype": "select",
           "fulltype": "applookup/select",
-          "description": "A reference to another LivingApp record from a target lookup app (or `null`).\n\nThe field value will be a valid record URL in the form `https://<hostname>/rest/apps/<app-id>/records/<record-id>` or `null`."
+          "description": "A reference to another LivingApp record from a target lookup app (or `null`).\n\nThe field value will be a valid record URL in the form `https://<hostname>/rest/apps/<app-id>/records/<record-id>` or `null`.",
+          "lookup_app": "https://my.living-apps.de/rest/apps/69131a49a83d8e2ed62188f0"
         },
         "bestellmenge": {
           "identifier": "bestellmenge",
@@ -191,7 +200,15 @@
           "type": "lookup",
           "subtype": "select",
           "fulltype": "lookup/select",
-          "description": "One selected option of multiple available options (or `null`).\n\nThe available options are defined in the `lookup_data` attribute of this control's LivingApp.\n\nThe field value will be the key in this `lookup_data` attribute or `null`."
+          "description": "One selected option of multiple available options (or `null`).\n\nThe available options are defined in the `lookup_data` attribute of this control's LivingApp.\n\nThe field value will be the key in this `lookup_data` attribute or `null`.",
+          "lookup_data": {
+            "entwurf": "Entwurf",
+            "bestellt": "Bestellt",
+            "bestaetigt": "Best\u00e4tigt",
+            "teilweise_geliefert": "Teilweise geliefert",
+            "geliefert": "Geliefert",
+            "storniert": "Storniert"
+          }
         },
         "lieferantenbestellung": {
           "identifier": "lieferantenbestellung",
@@ -208,6 +225,398 @@
           "subtype": "textarea",
           "fulltype": "string/textarea",
           "description": "A string value that can contain multiple lines of text (or `null`)."
+        }
+      }
+    },
+    "lagerverwaltungssystem": {
+      "app_id": "69131a6a186719eb429b3e65",
+      "name": "Lagerverwaltungssystem",
+      "controls": {
+        "kategorie": {
+          "identifier": "kategorie",
+          "label": "Kategorie",
+          "type": "string",
+          "subtype": "text",
+          "fulltype": "string/text",
+          "description": "A string value not longer than 4000 characters (or `null`)."
+        },
+        "hintergrund_farbe_1_hell": {
+          "identifier": "hintergrund_farbe_1_hell",
+          "label": "Hintergrund-Farbe 1 hell",
+          "type": "string",
+          "subtype": "text",
+          "fulltype": "string/text",
+          "description": "A string value not longer than 4000 characters (or `null`)."
+        },
+        "hintergrund_bild_hell": {
+          "identifier": "hintergrund_bild_hell",
+          "label": "Hintergrund-Bild hell",
+          "type": "file",
+          "subtype": null,
+          "fulltype": "file",
+          "description": "An uploaded file. (Or `null`/`None`)\n\nThe field value will be a URL to download the file in the form `https://<hostname>/files/<app-id>/data/<record-id>/<control-identifier>/<internal-id>` or `null`."
+        },
+        "app_id": {
+          "identifier": "app_id",
+          "label": "App-ID",
+          "type": "string",
+          "subtype": "text",
+          "fulltype": "string/text",
+          "description": "A string value not longer than 4000 characters (or `null`)."
+        },
+        "icon": {
+          "identifier": "icon",
+          "label": "Icon",
+          "type": "string",
+          "subtype": "text",
+          "fulltype": "string/text",
+          "description": "A string value not longer than 4000 characters (or `null`)."
+        },
+        "parameter_identifizierer": {
+          "identifier": "parameter_identifizierer",
+          "label": "Parameter-Identifizierer",
+          "type": "string",
+          "subtype": "text",
+          "fulltype": "string/text",
+          "description": "A string value not longer than 4000 characters (or `null`)."
+        },
+        "target": {
+          "identifier": "target",
+          "label": "Target",
+          "type": "string",
+          "subtype": "text",
+          "fulltype": "string/text",
+          "description": "A string value not longer than 4000 characters (or `null`)."
+        },
+        "breite_tablet": {
+          "identifier": "breite_tablet",
+          "label": "Breite (Tablet)",
+          "type": "number",
+          "subtype": null,
+          "fulltype": "number",
+          "description": "A decimal number value (or `null`).",
+          "precision": 0
+        },
+        "hoehe_widescreen": {
+          "identifier": "hoehe_widescreen",
+          "label": "H\u00f6he (Widescreen)",
+          "type": "number",
+          "subtype": null,
+          "fulltype": "number",
+          "description": "A decimal number value (or `null`).",
+          "precision": 0
+        },
+        "hoehe_fullhd": {
+          "identifier": "hoehe_fullhd",
+          "label": "H\u00f6he (FullHD)",
+          "type": "number",
+          "subtype": null,
+          "fulltype": "number",
+          "description": "A decimal number value (or `null`).",
+          "precision": 0
+        },
+        "text_farbe_hell": {
+          "identifier": "text_farbe_hell",
+          "label": "Text-Farbe hell",
+          "type": "string",
+          "subtype": "text",
+          "fulltype": "string/text",
+          "description": "A string value not longer than 4000 characters (or `null`)."
+        },
+        "hintergrund_bild_dunkel": {
+          "identifier": "hintergrund_bild_dunkel",
+          "label": "Hintergrund-Bild dunkel",
+          "type": "file",
+          "subtype": null,
+          "fulltype": "file",
+          "description": "An uploaded file. (Or `null`/`None`)\n\nThe field value will be a URL to download the file in the form `https://<hostname>/files/<app-id>/data/<record-id>/<control-identifier>/<internal-id>` or `null`."
+        },
+        "uebergeordnetes_panel": {
+          "identifier": "uebergeordnetes_panel",
+          "label": "\u00dcbergeordnetes Panel",
+          "type": "applookup",
+          "subtype": "select",
+          "fulltype": "applookup/select",
+          "description": "A reference to another LivingApp record from a target lookup app (or `null`).\n\nThe field value will be a valid record URL in the form `https://<hostname>/rest/apps/<app-id>/records/<record-id>` or `null`.",
+          "lookup_app": "https://my.living-apps.de/rest/apps/69131a6a186719eb429b3e65"
+        },
+        "dummy": {
+          "identifier": "dummy",
+          "label": "Dummy",
+          "type": "string",
+          "subtype": "text",
+          "fulltype": "string/text",
+          "description": "A string value not longer than 4000 characters (or `null`)."
+        },
+        "beschriftung": {
+          "identifier": "beschriftung",
+          "label": "Beschriftung",
+          "type": "string",
+          "subtype": "text",
+          "fulltype": "string/text",
+          "description": "A string value not longer than 4000 characters (or `null`)."
+        },
+        "reihenfolge": {
+          "identifier": "reihenfolge",
+          "label": "Reihenfolge",
+          "type": "number",
+          "subtype": null,
+          "fulltype": "number",
+          "description": "A decimal number value (or `null`).",
+          "precision": 0
+        },
+        "hoehe_tablet": {
+          "identifier": "hoehe_tablet",
+          "label": "H\u00f6he (Tablet)",
+          "type": "number",
+          "subtype": null,
+          "fulltype": "number",
+          "description": "A decimal number value (or `null`).",
+          "precision": 0
+        },
+        "spalte_widescreen": {
+          "identifier": "spalte_widescreen",
+          "label": "Spalte (Widescreen)",
+          "type": "number",
+          "subtype": null,
+          "fulltype": "number",
+          "description": "A decimal number value (or `null`).",
+          "precision": 0
+        },
+        "beschreibung": {
+          "identifier": "beschreibung",
+          "label": "Beschreibung",
+          "type": "string",
+          "subtype": "textarea",
+          "fulltype": "string/textarea",
+          "description": "A string value that can contain multiple lines of text (or `null`)."
+        },
+        "hoehe_desktop": {
+          "identifier": "hoehe_desktop",
+          "label": "H\u00f6he (Desktop)",
+          "type": "number",
+          "subtype": null,
+          "fulltype": "number",
+          "description": "A decimal number value (or `null`).",
+          "precision": 0
+        },
+        "breite_widescreen": {
+          "identifier": "breite_widescreen",
+          "label": "Breite (Widescreen)",
+          "type": "number",
+          "subtype": null,
+          "fulltype": "number",
+          "description": "A decimal number value (or `null`).",
+          "precision": 0
+        },
+        "breite_fullhd": {
+          "identifier": "breite_fullhd",
+          "label": "Breite (FullHD)",
+          "type": "number",
+          "subtype": null,
+          "fulltype": "number",
+          "description": "A decimal number value (or `null`).",
+          "precision": 0
+        },
+        "hintergrund": {
+          "identifier": "hintergrund",
+          "label": "Hintergrund",
+          "type": "lookup",
+          "subtype": "select",
+          "fulltype": "lookup/select",
+          "description": "One selected option of multiple available options (or `null`).\n\nThe available options are defined in the `lookup_data` attribute of this control's LivingApp.\n\nThe field value will be the key in this `lookup_data` attribute or `null`.",
+          "lookup_data": {
+            "einfache_farbe": "Einfache Farbe",
+            "linearer_farbverlauf": "Linearer Farbverlauf",
+            "bild": "Bild",
+            "kreisfoermiger_farbverlauf": "Kreisf\u00f6rmiger Farbverlauf"
+          }
+        },
+        "text_farbe_dunkel": {
+          "identifier": "text_farbe_dunkel",
+          "label": "Text-Farbe dunkel",
+          "type": "string",
+          "subtype": "text",
+          "fulltype": "string/text",
+          "description": "A string value not longer than 4000 characters (or `null`)."
+        },
+        "hintergrund_farbe_1_dunkel": {
+          "identifier": "hintergrund_farbe_1_dunkel",
+          "label": "Hintergrund-Farbe 1 dunkel",
+          "type": "string",
+          "subtype": "text",
+          "fulltype": "string/text",
+          "description": "A string value not longer than 4000 characters (or `null`)."
+        },
+        "hintergrund_farbe_2_dunkel": {
+          "identifier": "hintergrund_farbe_2_dunkel",
+          "label": "Hintergrund-Farbe 2 dunkel",
+          "type": "string",
+          "subtype": "text",
+          "fulltype": "string/text",
+          "description": "A string value not longer than 4000 characters (or `null`)."
+        },
+        "css_class": {
+          "identifier": "css_class",
+          "label": "CSS-Class",
+          "type": "string",
+          "subtype": "text",
+          "fulltype": "string/text",
+          "description": "A string value not longer than 4000 characters (or `null`)."
+        },
+        "spalte_mobil2": {
+          "identifier": "spalte_mobil2",
+          "label": "Spalte (Mobil)",
+          "type": "number",
+          "subtype": null,
+          "fulltype": "number",
+          "description": "A decimal number value (or `null`).",
+          "precision": 0
+        },
+        "parameter_typ": {
+          "identifier": "parameter_typ",
+          "label": "Parameter-Typ",
+          "type": "lookup",
+          "subtype": "select",
+          "fulltype": "lookup/select",
+          "description": "One selected option of multiple available options (or `null`).\n\nThe available options are defined in the `lookup_data` attribute of this control's LivingApp.\n\nThe field value will be the key in this `lookup_data` attribute or `null`.",
+          "lookup_data": {
+            "number": "number",
+            "string": "string",
+            "html": "html",
+            "color": "color",
+            "date": "date",
+            "option_1": "bool",
+            "option_2": "int",
+            "datetime": "datetime",
+            "datedelta": "datedelta",
+            "datetimedelta": "datetimedelta",
+            "monthdelta": "monthdelta",
+            "upload": "upload",
+            "control": "control"
+          }
+        },
+        "parameter_ist_zuruecksetzbar": {
+          "identifier": "parameter_ist_zuruecksetzbar",
+          "label": "Parameter ist zur\u00fccksetzbar",
+          "type": "bool",
+          "subtype": null,
+          "fulltype": "bool",
+          "description": "A boolean value, i.e. `true` or `false` (or `null`)."
+        },
+        "parameter_ist_pflichtfeld": {
+          "identifier": "parameter_ist_pflichtfeld",
+          "label": "Parameter ist Pflichtfeld",
+          "type": "bool",
+          "subtype": null,
+          "fulltype": "bool",
+          "description": "A boolean value, i.e. `true` or `false` (or `null`)."
+        },
+        "parameter_optionen": {
+          "identifier": "parameter_optionen",
+          "label": "Parameter-Optionen",
+          "type": "string",
+          "subtype": "textarea",
+          "fulltype": "string/textarea",
+          "description": "A string value that can contain multiple lines of text (or `null`)."
+        },
+        "template": {
+          "identifier": "template",
+          "label": "Template",
+          "type": "string",
+          "subtype": "text",
+          "fulltype": "string/text",
+          "description": "A string value not longer than 4000 characters (or `null`)."
+        },
+        "title": {
+          "identifier": "title",
+          "label": "Title",
+          "type": "string",
+          "subtype": "text",
+          "fulltype": "string/text",
+          "description": "A string value not longer than 4000 characters (or `null`)."
+        },
+        "url": {
+          "identifier": "url",
+          "label": "URL",
+          "type": "string",
+          "subtype": "text",
+          "fulltype": "string/text",
+          "description": "A string value not longer than 4000 characters (or `null`)."
+        },
+        "breite_mobil2": {
+          "identifier": "breite_mobil2",
+          "label": "Breite (Mobil)",
+          "type": "number",
+          "subtype": null,
+          "fulltype": "number",
+          "description": "A decimal number value (or `null`).",
+          "precision": 0
+        },
+        "hoehe_mobil2": {
+          "identifier": "hoehe_mobil2",
+          "label": "H\u00f6he (Mobil)",
+          "type": "number",
+          "subtype": null,
+          "fulltype": "number",
+          "description": "A decimal number value (or `null`).",
+          "precision": 0
+        },
+        "spalte_tablet": {
+          "identifier": "spalte_tablet",
+          "label": "Spalte (Tablet)",
+          "type": "number",
+          "subtype": null,
+          "fulltype": "number",
+          "description": "A decimal number value (or `null`).",
+          "precision": 0
+        },
+        "breite_tablet2": {
+          "identifier": "breite_tablet2",
+          "label": "Breite (Desktop)",
+          "type": "number",
+          "subtype": null,
+          "fulltype": "number",
+          "description": "A decimal number value (or `null`).",
+          "precision": 0
+        },
+        "spalte_desktop": {
+          "identifier": "spalte_desktop",
+          "label": "Spalte (Desktop)",
+          "type": "number",
+          "subtype": null,
+          "fulltype": "number",
+          "description": "A decimal number value (or `null`).",
+          "precision": 0
+        },
+        "spalte_fullhd": {
+          "identifier": "spalte_fullhd",
+          "label": "Spalte (FullHD)",
+          "type": "number",
+          "subtype": null,
+          "fulltype": "number",
+          "description": "A decimal number value (or `null`).",
+          "precision": 0
+        },
+        "darstellung": {
+          "identifier": "darstellung",
+          "label": "Darstellung",
+          "type": "lookup",
+          "subtype": "select",
+          "fulltype": "lookup/select",
+          "description": "One selected option of multiple available options (or `null`).\n\nThe available options are defined in the `lookup_data` attribute of this control's LivingApp.\n\nThe field value will be the key in this `lookup_data` attribute or `null`.",
+          "lookup_data": {
+            "titel": "Titel",
+            "karte": "Karte"
+          }
+        },
+        "hintergrund_farbe_2_hell": {
+          "identifier": "hintergrund_farbe_2_hell",
+          "label": "Hintergrund-Farbe 2 hell",
+          "type": "string",
+          "subtype": "text",
+          "fulltype": "string/text",
+          "description": "A string value not longer than 4000 characters (or `null`)."
         }
       }
     },
@@ -245,7 +654,17 @@
           "type": "lookup",
           "subtype": "select",
           "fulltype": "lookup/select",
-          "description": "One selected option of multiple available options (or `null`).\n\nThe available options are defined in the `lookup_data` attribute of this control's LivingApp.\n\nThe field value will be the key in this `lookup_data` attribute or `null`."
+          "description": "One selected option of multiple available options (or `null`).\n\nThe available options are defined in the `lookup_data` attribute of this control's LivingApp.\n\nThe field value will be the key in this `lookup_data` attribute or `null`.",
+          "lookup_data": {
+            "elektronik": "Elektronik",
+            "lebensmittel": "Lebensmittel",
+            "kleidung": "Kleidung",
+            "moebel": "M\u00f6bel",
+            "werkzeuge": "Werkzeuge",
+            "buero": "B\u00fcrobedarf",
+            "spielwaren": "Spielwaren",
+            "sonstiges": "Sonstiges"
+          }
         },
         "einkaufspreis": {
           "identifier": "einkaufspreis",
@@ -280,7 +699,16 @@
           "type": "lookup",
           "subtype": "select",
           "fulltype": "lookup/select",
-          "description": "One selected option of multiple available options (or `null`).\n\nThe available options are defined in the `lookup_data` attribute of this control's LivingApp.\n\nThe field value will be the key in this `lookup_data` attribute or `null`."
+          "description": "One selected option of multiple available options (or `null`).\n\nThe available options are defined in the `lookup_data` attribute of this control's LivingApp.\n\nThe field value will be the key in this `lookup_data` attribute or `null`.",
+          "lookup_data": {
+            "stueck": "St\u00fcck",
+            "kg": "Kilogramm",
+            "g": "Gramm",
+            "liter": "Liter",
+            "meter": "Meter",
+            "karton": "Karton",
+            "palette": "Palette"
+          }
         },
         "barcode": {
           "identifier": "barcode",
@@ -304,7 +732,12 @@
           "type": "lookup",
           "subtype": "select",
           "fulltype": "lookup/select",
-          "description": "One selected option of multiple available options (or `null`).\n\nThe available options are defined in the `lookup_data` attribute of this control's LivingApp.\n\nThe field value will be the key in this `lookup_data` attribute or `null`."
+          "description": "One selected option of multiple available options (or `null`).\n\nThe available options are defined in the `lookup_data` attribute of this control's LivingApp.\n\nThe field value will be the key in this `lookup_data` attribute or `null`.",
+          "lookup_data": {
+            "aktiv": "Aktiv",
+            "inaktiv": "Inaktiv",
+            "auslaufend": "Auslaufend"
+          }
         }
       }
     },
@@ -318,7 +751,8 @@
           "type": "applookup",
           "subtype": "select",
           "fulltype": "applookup/select",
-          "description": "A reference to another LivingApp record from a target lookup app (or `null`).\n\nThe field value will be a valid record URL in the form `https://<hostname>/rest/apps/<app-id>/records/<record-id>` or `null`."
+          "description": "A reference to another LivingApp record from a target lookup app (or `null`).\n\nThe field value will be a valid record URL in the form `https://<hostname>/rest/apps/<app-id>/records/<record-id>` or `null`.",
+          "lookup_app": "https://my.living-apps.de/rest/apps/69131a49a83d8e2ed62188f0"
         },
         "lagerort": {
           "identifier": "lagerort",
@@ -326,7 +760,17 @@
           "type": "lookup",
           "subtype": "select",
           "fulltype": "lookup/select",
-          "description": "One selected option of multiple available options (or `null`).\n\nThe available options are defined in the `lookup_data` attribute of this control's LivingApp.\n\nThe field value will be the key in this `lookup_data` attribute or `null`."
+          "description": "One selected option of multiple available options (or `null`).\n\nThe available options are defined in the `lookup_data` attribute of this control's LivingApp.\n\nThe field value will be the key in this `lookup_data` attribute or `null`.",
+          "lookup_data": {
+            "regal_a1": "Regal A1",
+            "regal_a2": "Regal A2",
+            "regal_b1": "Regal B1",
+            "regal_b2": "Regal B2",
+            "hochregal_1": "Hochregal 1",
+            "kuehllager": "K\u00fchllager",
+            "aussenlager": "Au\u00dfenlager",
+            "retoure": "Retoure"
+          }
         },
         "menge": {
           "identifier": "menge",
@@ -383,7 +827,8 @@
           "type": "applookup",
           "subtype": "select",
           "fulltype": "applookup/select",
-          "description": "A reference to another LivingApp record from a target lookup app (or `null`).\n\nThe field value will be a valid record URL in the form `https://<hostname>/rest/apps/<app-id>/records/<record-id>` or `null`."
+          "description": "A reference to another LivingApp record from a target lookup app (or `null`).\n\nThe field value will be a valid record URL in the form `https://<hostname>/rest/apps/<app-id>/records/<record-id>` or `null`.",
+          "lookup_app": "https://my.living-apps.de/rest/apps/69131a4fedccc6591086c8d9"
         },
         "produkt": {
           "identifier": "produkt",
@@ -391,7 +836,8 @@
           "type": "applookup",
           "subtype": "select",
           "fulltype": "applookup/select",
-          "description": "A reference to another LivingApp record from a target lookup app (or `null`).\n\nThe field value will be a valid record URL in the form `https://<hostname>/rest/apps/<app-id>/records/<record-id>` or `null`."
+          "description": "A reference to another LivingApp record from a target lookup app (or `null`).\n\nThe field value will be a valid record URL in the form `https://<hostname>/rest/apps/<app-id>/records/<record-id>` or `null`.",
+          "lookup_app": "https://my.living-apps.de/rest/apps/69131a49a83d8e2ed62188f0"
         },
         "lieferant": {
           "identifier": "lieferant",
@@ -399,7 +845,8 @@
           "type": "applookup",
           "subtype": "select",
           "fulltype": "applookup/select",
-          "description": "A reference to another LivingApp record from a target lookup app (or `null`).\n\nThe field value will be a valid record URL in the form `https://<hostname>/rest/apps/<app-id>/records/<record-id>` or `null`."
+          "description": "A reference to another LivingApp record from a target lookup app (or `null`).\n\nThe field value will be a valid record URL in the form `https://<hostname>/rest/apps/<app-id>/records/<record-id>` or `null`.",
+          "lookup_app": "https://my.living-apps.de/rest/apps/69131a4ee2d56093dc1c94b0"
         },
         "lieferdatum": {
           "identifier": "lieferdatum",
@@ -424,7 +871,17 @@
           "type": "lookup",
           "subtype": "select",
           "fulltype": "lookup/select",
-          "description": "One selected option of multiple available options (or `null`).\n\nThe available options are defined in the `lookup_data` attribute of this control's LivingApp.\n\nThe field value will be the key in this `lookup_data` attribute or `null`."
+          "description": "One selected option of multiple available options (or `null`).\n\nThe available options are defined in the `lookup_data` attribute of this control's LivingApp.\n\nThe field value will be the key in this `lookup_data` attribute or `null`.",
+          "lookup_data": {
+            "regal_a1": "Regal A1",
+            "regal_a2": "Regal A2",
+            "regal_b1": "Regal B1",
+            "regal_b2": "Regal B2",
+            "hochregal_1": "Hochregal 1",
+            "kuehllager": "K\u00fchllager",
+            "aussenlager": "Au\u00dfenlager",
+            "retoure": "Retoure"
+          }
         },
         "qualitaetspruefung": {
           "identifier": "qualitaetspruefung",
@@ -432,7 +889,13 @@
           "type": "lookup",
           "subtype": "select",
           "fulltype": "lookup/select",
-          "description": "One selected option of multiple available options (or `null`).\n\nThe available options are defined in the `lookup_data` attribute of this control's LivingApp.\n\nThe field value will be the key in this `lookup_data` attribute or `null`."
+          "description": "One selected option of multiple available options (or `null`).\n\nThe available options are defined in the `lookup_data` attribute of this control's LivingApp.\n\nThe field value will be the key in this `lookup_data` attribute or `null`.",
+          "lookup_data": {
+            "bestanden": "Bestanden \u2705",
+            "mit_maengeln": "Mit M\u00e4ngeln \u26a0\ufe0f",
+            "nicht_bestanden": "Nicht bestanden \u274c",
+            "nicht_geprueft": "Nicht gepr\u00fcft"
+          }
         },
         "abweichungen": {
           "identifier": "abweichungen",
@@ -481,6 +944,7 @@
     "apps_list": [
       "Lieferanten",
       "Bestellungen",
+      "Lagerverwaltungssystem",
       "Produkte",
       "Lagerbestand",
       "Wareneingang"

@@ -33,40 +33,140 @@ async def main():
         try:
             run_git_cmd("git config --global user.email 'lilo@livinglogic.de'")
             run_git_cmd("git config --global user.name 'Lilo'")
-
-            # Git initialisieren (funktioniert auch wenn bereits initialisiert)
-            run_git_cmd("git init")
             
-            # Branch-Handling: erst versuchen zu wechseln, dann neu erstellen
-            branch_result = subprocess.run(
-                "git checkout main",
-                shell=True,
-                cwd="/home/user/app",
-                capture_output=True,
-                text=True
-            )
-            if branch_result.returncode != 0:
+            git_push_url = os.getenv('GIT_PUSH_URL')
+            appgroup_id = os.getenv('REPO_NAME')
+            livingapps_api_key = os.getenv('LIVINGAPPS_API_KEY')
+            
+            # Prüfe ob Repo existiert und übernehme .git History
+            print("[DEPLOY] Prüfe ob Repo bereits existiert...")
+            try:
+                run_git_cmd(f"git clone {git_push_url} /tmp/old_repo")
+                run_git_cmd("cp -r /tmp/old_repo/.git /home/user/app/.git")
+                print("[DEPLOY] ✅ History vom existierenden Repo übernommen")
+            except:
+                # Neues Repo - von vorne initialisieren
+                print("[DEPLOY] ✅ Neues Repo wird initialisiert")
+                run_git_cmd("git init")
                 run_git_cmd("git checkout -b main")
+                run_git_cmd(f"git remote add origin {git_push_url}")
             
-            run_git_cmd("git add .")
+            # Neuen Code committen
+            run_git_cmd("git add -A")
             run_git_cmd("git commit -m 'Lilo Auto-Deploy' --allow-empty")
+            run_git_cmd("git push origin main")
             
-            # Remote-Handling: erst versuchen hinzuzufügen, dann URL aktualisieren
-            remote_result = subprocess.run(
-                f"git remote add origin {os.getenv('GIT_PUSH_URL')}",
-                shell=True,
-                cwd="/home/user/app",
-                capture_output=True,
-                text=True
-            )
-            if remote_result.returncode != 0:
-                run_git_cmd(f"git remote set-url origin {os.getenv('GIT_PUSH_URL')}")
+            print("[DEPLOY] ✅ Push erfolgreich!")
             
-            # Force push um bestehenden Content zu überschreiben (für Updates)
-            run_git_cmd("git push -f -u origin main")
+            # Ab hier: Dashboard-Links in Living Apps hinzufügen
+            if livingapps_api_key and appgroup_id:
+                print("[DEPLOY] 🔗 Füge Dashboard-Links zu Apps hinzu...")
+                
+                import httpx
+                import time
+                
+                headers = {
+                    "X-API-Key": livingapps_api_key,
+                    "Accept": "application/json",
+                    "Content-Type": "application/json"
+                }
+                
+                try:
+                    # 1. Hole alle App-IDs der Appgroup
+                    print(f"[DEPLOY] Lade Appgroup: {appgroup_id}")
+                    resp = httpx.get(
+                        f"https://my.living-apps.de/rest/appgroups/{appgroup_id}",
+                        headers=headers,
+                        timeout=30
+                    )
+                    resp.raise_for_status()
+                    appgroup = resp.json()
+                    
+                    app_ids = [app_data["id"] for app_data in appgroup.get("apps", {}).values()]
+                    print(f"[DEPLOY] Gefunden: {len(app_ids)} Apps")
+                    
+                    if not app_ids:
+                        print("[DEPLOY] ⚠️ Keine Apps gefunden")
+                        return {"content": [{"type": "text", "text": "✅ Deployment erfolgreich!"}]}
+                    
+                    dashboard_url = f"https://my.living-apps.de/github/{appgroup_id}/"
+                    
+                    # 2. Füge inaktive Dashboard-Links hinzu
+                    print("[DEPLOY] Füge inaktive Dashboard-Links hinzu...")
+                    for app_id in app_ids:
+                        try:
+                            # URL (leer = nicht klickbar)
+                            httpx.put(
+                                f"https://my.living-apps.de/rest/apps/{app_id}/params/la_page_header_additional_url",
+                                headers=headers,
+                                json={"description": "dashboard_url", "type": "string", "value": ""},
+                                timeout=10
+                            )
+                            # Icon
+                            httpx.put(
+                                f"https://my.living-apps.de/rest/apps/{app_id}/params/la_page_header_additional_icon",
+                                headers=headers,
+                                json={"description": "dashboard_icon", "type": "string", "value": "chart-simple"},
+                                timeout=10
+                            )
+                            # Title
+                            httpx.put(
+                                f"https://my.living-apps.de/rest/apps/{app_id}/params/la_page_header_additional_title",
+                                headers=headers,
+                                json={"description": "dashboard_title", "type": "string", "value": "Dein Dashboard ist in wenigen Augenblicken verfügbar..."},
+                                timeout=10
+                            )
+                            print(f"[DEPLOY]   ✓ App {app_id}")
+                        except Exception as e:
+                            print(f"[DEPLOY]   ✗ App {app_id}: {e}")
+                    
+                    # 3. Warte bis Dashboard verfügbar ist
+                    print(f"[DEPLOY] ⏳ Warte auf Dashboard: {dashboard_url}")
+                    max_attempts = 180  # Max 180 Sekunden warten
+                    for attempt in range(max_attempts):
+                        try:
+                            check_resp = httpx.get(dashboard_url, timeout=5)
+                            if check_resp.status_code == 200:
+                                print(f"[DEPLOY] ✅ Dashboard ist verfügbar!")
+                                break
+                        except:
+                            pass
+                        
+                        if attempt < max_attempts - 1:
+                            time.sleep(1)
+                        else:
+                            print("[DEPLOY] ⚠️ Timeout - Dashboard nicht erreichbar")
+                            return {"content": [{"type": "text", "text": "✅ Deployment erfolgreich! Dashboard-Links konnten nicht aktiviert werden."}]}
+                    
+                    # 4. Aktiviere Dashboard-Links
+                    print("[DEPLOY] 🎉 Aktiviere Dashboard-Links...")
+                    for app_id in app_ids:
+                        try:
+                            # URL aktivieren
+                            httpx.put(
+                                f"https://my.living-apps.de/rest/apps/{app_id}/params/la_page_header_additional_url",
+                                headers=headers,
+                                json={"description": "dashboard_url", "type": "string", "value": dashboard_url},
+                                timeout=10
+                            )
+                            # Title aktualisieren
+                            httpx.put(
+                                f"https://my.living-apps.de/rest/apps/{app_id}/params/la_page_header_additional_title",
+                                headers=headers,
+                                json={"description": "dashboard_title", "type": "string", "value": "Dashboard"},
+                                timeout=10
+                            )
+                            print(f"[DEPLOY]   ✓ App {app_id} aktiviert")
+                        except Exception as e:
+                            print(f"[DEPLOY]   ✗ App {app_id}: {e}")
+                    
+                    print("[DEPLOY] ✅ Dashboard-Links erfolgreich hinzugefügt!")
+                    
+                except Exception as e:
+                    print(f"[DEPLOY] ⚠️ Fehler beim Hinzufügen der Dashboard-Links: {e}")
 
             return {
-                "content": [{"type": "text", "text": "✅ Deployment erfolgreich! Code wurde gepusht."}]
+                "content": [{"type": "text", "text": "✅ Deployment erfolgreich! Code wurde gepusht und Dashboard-Links hinzugefügt."}]
             }
 
         except Exception as e:
