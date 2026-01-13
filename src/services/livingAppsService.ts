@@ -1,6 +1,6 @@
 // AUTOMATICALLY GENERATED SERVICE
 import { APP_IDS } from '@/types/app';
-import type { Lieferanten, Bestellungen, Lagerverwaltungssystem, Produkte, Lagerbestand, Wareneingang } from '@/types/app';
+import type { Lieferanten, Bestellungen, Produkte, Lagerbestand, Wareneingang } from '@/types/app';
 
 // Base Configuration
 const API_BASE_URL = 'https://my.living-apps.de/rest';
@@ -71,27 +71,6 @@ export class LivingAppsService {
   }
   static async deleteBestellungenEntry(id: string) {
     return callApi('DELETE', `/apps/${APP_IDS.BESTELLUNGEN}/records/${id}`);
-  }
-
-  // --- LAGERVERWALTUNGSSYSTEM ---
-  static async getLagerverwaltungssystem(): Promise<Lagerverwaltungssystem[]> {
-    const data = await callApi('GET', `/apps/${APP_IDS.LAGERVERWALTUNGSSYSTEM}/records`);
-    return Object.entries(data).map(([id, rec]: [string, any]) => ({
-      record_id: id, ...rec
-    }));
-  }
-  static async getLagerverwaltungssystemEntry(id: string): Promise<Lagerverwaltungssystem | undefined> {
-    const data = await callApi('GET', `/apps/${APP_IDS.LAGERVERWALTUNGSSYSTEM}/records/${id}`);
-    return { record_id: data.id, ...data };
-  }
-  static async createLagerverwaltungssystemEntry(fields: Lagerverwaltungssystem['fields']) {
-    return callApi('POST', `/apps/${APP_IDS.LAGERVERWALTUNGSSYSTEM}/records`, { fields });
-  }
-  static async updateLagerverwaltungssystemEntry(id: string, fields: Partial<Lagerverwaltungssystem['fields']>) {
-    return callApi('PATCH', `/apps/${APP_IDS.LAGERVERWALTUNGSSYSTEM}/records/${id}`, { fields });
-  }
-  static async deleteLagerverwaltungssystemEntry(id: string) {
-    return callApi('DELETE', `/apps/${APP_IDS.LAGERVERWALTUNGSSYSTEM}/records/${id}`);
   }
 
   // --- PRODUKTE ---

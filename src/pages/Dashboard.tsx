@@ -1,65 +1,43 @@
-import { useEffect, useState } from 'react';
-import { LivingAppsService, extractRecordId } from '@/services/livingAppsService';
+import { useState, useEffect, useMemo } from 'react';
 import type { Produkte, Lagerbestand, Bestellungen, Wareneingang, Lieferanten } from '@/types/app';
 import { APP_IDS } from '@/types/app';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { LivingAppsService, extractRecordId, createRecordUrl } from '@/services/livingAppsService';
+import { format, parseISO } from 'date-fns';
+import { de } from 'date-fns/locale';
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import {
   Package,
   ShoppingCart,
-  TrendingUp,
+  Truck,
   AlertTriangle,
-  Users,
-  CheckCircle,
-  XCircle,
-  Clock,
   Plus,
-  PackageOpen
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  XCircle
 } from 'lucide-react';
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { format } from 'date-fns';
-import { de } from 'date-fns/locale';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { createRecordUrl } from '@/services/livingAppsService';
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  Cell
+} from 'recharts';
 
-interface DashboardData {
-  produkte: Produkte[];
-  lagerbestand: Lagerbestand[];
-  bestellungen: Bestellungen[];
-  wareneingang: Wareneingang[];
-  lieferanten: Lieferanten[];
-}
-
-// Lookup-Daten für Anzeigewerte
-const KATEGORIE_LABELS: Record<string, string> = {
-  elektronik: 'Elektronik',
-  lebensmittel: 'Lebensmittel',
-  kleidung: 'Kleidung',
-  moebel: 'Möbel',
-  werkzeuge: 'Werkzeuge',
-  buero: 'Bürobedarf',
-  spielwaren: 'Spielwaren',
-  sonstiges: 'Sonstiges',
-};
-
+// Lookup data for Lagerort
 const LAGERORT_LABELS: Record<string, string> = {
   regal_a1: 'Regal A1',
   regal_a2: 'Regal A2',
@@ -68,35 +46,94 @@ const LAGERORT_LABELS: Record<string, string> = {
   hochregal_1: 'Hochregal 1',
   kuehllager: 'Kühllager',
   aussenlager: 'Außenlager',
-  retoure: 'Retoure',
+  retoure: 'Retoure'
 };
 
+// Lookup data for Qualitätsprüfung
+const QUALITAET_LABELS: Record<string, string> = {
+  bestanden: 'Bestanden',
+  mit_maengeln: 'Mit Mängeln',
+  nicht_bestanden: 'Nicht bestanden',
+  nicht_geprueft: 'Nicht geprüft'
+};
+
+// Status labels for orders
 const STATUS_LABELS: Record<string, string> = {
   entwurf: 'Entwurf',
   bestellt: 'Bestellt',
   bestaetigt: 'Bestätigt',
   teilweise_geliefert: 'Teilweise geliefert',
   geliefert: 'Geliefert',
-  storniert: 'Storniert',
+  storniert: 'Storniert'
 };
 
-const QUALITAET_LABELS: Record<string, string> = {
-  bestanden: 'Bestanden ✅',
-  mit_maengeln: 'Mit Mängeln ⚠️',
-  nicht_bestanden: 'Nicht bestanden ❌',
-  nicht_geprueft: 'Nicht geprüft',
-};
+interface EnrichedLagerbestand extends Lagerbestand {
+  produkt_data?: Produkte;
+  deficit?: number;
+}
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+interface EnrichedBestellung extends Bestellungen {
+  lieferant_data?: Lieferanten;
+}
+
+interface EnrichedWareneingang extends Wareneingang {
+  produkt_data?: Produkte;
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="min-h-screen bg-background p-4 md:p-8">
+      <div className="mx-auto max-w-7xl space-y-6">
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-10 w-40" />
+        </div>
+        {/* KPI cards skeleton */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-28" />
+          ))}
+        </div>
+        {/* Content skeleton */}
+        <div className="grid md:grid-cols-3 gap-6">
+          <Skeleton className="h-80 md:col-span-2" />
+          <Skeleton className="h-80" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ErrorState({ error, onRetry }: { error: Error; onRetry: () => void }) {
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <Alert variant="destructive" className="max-w-md">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Fehler beim Laden</AlertTitle>
+        <AlertDescription className="mt-2">
+          {error.message}
+          <Button variant="outline" size="sm" onClick={onRetry} className="mt-4 w-full">
+            Erneut versuchen
+          </Button>
+        </AlertDescription>
+      </Alert>
+    </div>
+  );
+}
 
 export default function Dashboard() {
-  const [data, setData] = useState<DashboardData | null>(null);
+  const [produkte, setProdukte] = useState<Produkte[]>([]);
+  const [lagerbestand, setLagerbestand] = useState<Lagerbestand[]>([]);
+  const [bestellungen, setBestellungen] = useState<Bestellungen[]>([]);
+  const [wareneingang, setWareneingang] = useState<Wareneingang[]>([]);
+  const [lieferanten, setLieferanten] = useState<Lieferanten[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Error | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Form state für Wareneingang-Dialog
+  // Form state for Wareneingang
   const [formData, setFormData] = useState({
     bestellung: '',
     produkt: '',
@@ -105,67 +142,155 @@ export default function Dashboard() {
     gelieferte_menge: '',
     lagerort: '',
     qualitaetspruefung: 'nicht_geprueft',
-    lieferscheinnummer: '',
-    abweichungen: '',
-    erfasst_von: '',
+    lieferscheinnummer: ''
   });
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  async function loadData() {
+  async function fetchData() {
     try {
       setLoading(true);
       setError(null);
-
-      const [produkte, lagerbestand, bestellungen, wareneingang, lieferanten] = await Promise.all([
+      const [p, l, b, w, lief] = await Promise.all([
         LivingAppsService.getProdukte(),
         LivingAppsService.getLagerbestand(),
         LivingAppsService.getBestellungen(),
         LivingAppsService.getWareneingang(),
-        LivingAppsService.getLieferanten(),
+        LivingAppsService.getLieferanten()
       ]);
-
-      setData({ produkte, lagerbestand, bestellungen, wareneingang, lieferanten });
+      setProdukte(p);
+      setLagerbestand(l);
+      setBestellungen(b);
+      setWareneingang(w);
+      setLieferanten(lief);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Fehler beim Laden der Daten');
+      setError(err instanceof Error ? err : new Error('Ein unbekannter Fehler ist aufgetreten'));
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleWareneingangSubmit(e: React.FormEvent) {
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // Create lookup maps
+  const produkteMap = useMemo(() => {
+    const map = new Map<string, Produkte>();
+    produkte.forEach(p => map.set(p.record_id, p));
+    return map;
+  }, [produkte]);
+
+  const lieferantenMap = useMemo(() => {
+    const map = new Map<string, Lieferanten>();
+    lieferanten.forEach(l => map.set(l.record_id, l));
+    return map;
+  }, [lieferanten]);
+
+  // Enrich Lagerbestand with product data and calculate deficit
+  const enrichedLagerbestand: EnrichedLagerbestand[] = useMemo(() => {
+    return lagerbestand.map(lb => {
+      const produktId = extractRecordId(lb.fields.produkt);
+      const produkt_data = produktId ? produkteMap.get(produktId) : undefined;
+      const menge = lb.fields.menge ?? 0;
+      const mindestbestand = produkt_data?.fields.mindestbestand ?? 0;
+      const deficit = mindestbestand > menge ? mindestbestand - menge : 0;
+      return { ...lb, produkt_data, deficit };
+    });
+  }, [lagerbestand, produkteMap]);
+
+  // Critical items (below minimum stock)
+  const kritischeArtikel = useMemo(() => {
+    return enrichedLagerbestand
+      .filter(lb => lb.deficit && lb.deficit > 0)
+      .sort((a, b) => (b.deficit ?? 0) - (a.deficit ?? 0));
+  }, [enrichedLagerbestand]);
+
+  // Active products count
+  const activeProductsCount = useMemo(() => {
+    return produkte.filter(p => p.fields.aktiv === 'aktiv').length;
+  }, [produkte]);
+
+  // Open orders (bestellt, bestaetigt, teilweise_geliefert)
+  const offeneBestellungen = useMemo(() => {
+    return bestellungen.filter(b =>
+      ['bestellt', 'bestaetigt', 'teilweise_geliefert'].includes(b.fields.status ?? '')
+    );
+  }, [bestellungen]);
+
+  // Enrich open orders with supplier data
+  const enrichedOffeneBestellungen: EnrichedBestellung[] = useMemo(() => {
+    return offeneBestellungen.map(b => {
+      const lieferantId = extractRecordId(b.fields.lieferant);
+      const lieferant_data = lieferantId ? lieferantenMap.get(lieferantId) : undefined;
+      return { ...b, lieferant_data };
+    });
+  }, [offeneBestellungen, lieferantenMap]);
+
+  // Upcoming deliveries (sorted by expected date)
+  const anstehendelieferungen = useMemo(() => {
+    const today = format(new Date(), 'yyyy-MM-dd');
+    return enrichedOffeneBestellungen
+      .filter(b => b.fields.erwartetes_lieferdatum && b.fields.erwartetes_lieferdatum >= today)
+      .sort((a, b) => (a.fields.erwartetes_lieferdatum ?? '').localeCompare(b.fields.erwartetes_lieferdatum ?? ''))
+      .slice(0, 5);
+  }, [enrichedOffeneBestellungen]);
+
+  // Today's goods receipts
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const wareneingangHeute = useMemo(() => {
+    return wareneingang.filter(w => w.fields.lieferdatum === today);
+  }, [wareneingang, today]);
+
+  // Recent goods receipts (enriched)
+  const recentWareneingang: EnrichedWareneingang[] = useMemo(() => {
+    return wareneingang
+      .sort((a, b) => (b.fields.lieferdatum ?? '').localeCompare(a.fields.lieferdatum ?? ''))
+      .slice(0, 5)
+      .map(w => {
+        const produktId = extractRecordId(w.fields.produkt);
+        const produkt_data = produktId ? produkteMap.get(produktId) : undefined;
+        return { ...w, produkt_data };
+      });
+  }, [wareneingang, produkteMap]);
+
+  // Chart data: Stock by location
+  const stockByLocation = useMemo(() => {
+    const groups = new Map<string, number>();
+    lagerbestand.forEach(lb => {
+      const loc = lb.fields.lagerort ?? 'unbekannt';
+      const menge = lb.fields.menge ?? 0;
+      groups.set(loc, (groups.get(loc) ?? 0) + menge);
+    });
+    return Array.from(groups.entries()).map(([name, value]) => ({
+      name: LAGERORT_LABELS[name] ?? name,
+      value
+    }));
+  }, [lagerbestand]);
+
+  // Handle form submission
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
 
     try {
-      // Konvertiere applookup-Felder zu vollständigen URLs
-      const fields: any = {
+      const apiData: Wareneingang['fields'] = {
         lieferdatum: formData.lieferdatum,
-        gelieferte_menge: parseFloat(formData.gelieferte_menge),
-        lagerort: formData.lagerort || undefined,
-        qualitaetspruefung: formData.qualitaetspruefung,
-        lieferscheinnummer: formData.lieferscheinnummer || undefined,
-        abweichungen: formData.abweichungen || undefined,
-        erfasst_von: formData.erfasst_von || undefined,
-        erfassungsdatum: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+        gelieferte_menge: formData.gelieferte_menge ? parseFloat(formData.gelieferte_menge) : undefined,
+        lagerort: formData.lagerort as Wareneingang['fields']['lagerort'],
+        qualitaetspruefung: formData.qualitaetspruefung as Wareneingang['fields']['qualitaetspruefung'],
+        lieferscheinnummer: formData.lieferscheinnummer || undefined
       };
 
-      // Nur URLs setzen wenn Werte ausgewählt wurden
       if (formData.bestellung) {
-        fields.bestellung = createRecordUrl(APP_IDS.BESTELLUNGEN, formData.bestellung);
+        apiData.bestellung = createRecordUrl(APP_IDS.BESTELLUNGEN, formData.bestellung);
       }
       if (formData.produkt) {
-        fields.produkt = createRecordUrl(APP_IDS.PRODUKTE, formData.produkt);
+        apiData.produkt = createRecordUrl(APP_IDS.PRODUKTE, formData.produkt);
       }
       if (formData.lieferant) {
-        fields.lieferant = createRecordUrl(APP_IDS.LIEFERANTEN, formData.lieferant);
+        apiData.lieferant = createRecordUrl(APP_IDS.LIEFERANTEN, formData.lieferant);
       }
 
-      await LivingAppsService.createWareneingangEntry(fields);
-
-      // Erfolgreich - Dialog schließen und Daten neu laden
+      await LivingAppsService.createWareneingangEntry(apiData);
       setDialogOpen(false);
       setFormData({
         bestellung: '',
@@ -175,259 +300,424 @@ export default function Dashboard() {
         gelieferte_menge: '',
         lagerort: '',
         qualitaetspruefung: 'nicht_geprueft',
-        lieferscheinnummer: '',
-        abweichungen: '',
-        erfasst_von: '',
+        lieferscheinnummer: ''
       });
-      await loadData();
+      await fetchData();
     } catch (err) {
-      alert('Fehler beim Erstellen des Wareneingangs: ' + (err instanceof Error ? err.message : String(err)));
+      console.error('Failed to create Wareneingang:', err);
     } finally {
       setSubmitting(false);
     }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-slate-600">Dashboard wird geladen...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !data) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8 flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-red-600">
-              <XCircle className="h-5 w-5" />
-              Fehler
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-slate-600 mb-4">{error || 'Daten konnten nicht geladen werden'}</p>
-            <Button onClick={loadData} className="w-full">
-              Erneut versuchen
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // === BERECHNUNGEN FÜR KPIs ===
-
-  // Gesamtbestandswert
-  const gesamtbestandswert = data.lagerbestand.reduce((sum, bestand) => {
-    const produktId = extractRecordId(bestand.fields.produkt);
-    if (!produktId) return sum;
-    const produkt = data.produkte.find(p => p.record_id === produktId);
-    const menge = bestand.fields.menge || 0;
-    const einkaufspreis = produkt?.fields.einkaufspreis || 0;
-    return sum + (menge * einkaufspreis);
-  }, 0);
-
-  // Offene Bestellungen (Wert)
-  const offeneBestellungen = data.bestellungen.filter(b =>
-    b.fields.status && ['bestellt', 'bestaetigt', 'teilweise_geliefert'].includes(b.fields.status)
-  );
-  const offenerBestellwert = offeneBestellungen.reduce((sum, b) => sum + (b.fields.gesamtpreis || 0), 0);
-
-  // Anzahl aktiver Lieferanten
-  const aktiveLieferantenCount = data.lieferanten.length;
-
-  // Kritische Bestände (unter Mindestbestand)
-  const kritischeBestaende = data.lagerbestand.filter(bestand => {
-    const produktId = extractRecordId(bestand.fields.produkt);
-    if (!produktId) return false;
-    const produkt = data.produkte.find(p => p.record_id === produktId);
-    const menge = bestand.fields.menge || 0;
-    const mindestbestand = produkt?.fields.mindestbestand || 0;
-    return menge < mindestbestand;
-  });
-
-  // === BESTANDSÜBERSICHT NACH KATEGORIE ===
-  const bestandNachKategorie: Record<string, { menge: number; wert: number }> = {};
-
-  data.lagerbestand.forEach(bestand => {
-    const produktId = extractRecordId(bestand.fields.produkt);
-    if (!produktId) return;
-    const produkt = data.produkte.find(p => p.record_id === produktId);
-    if (!produkt || !produkt.fields.kategorie) return;
-
-    const kategorie = produkt.fields.kategorie;
-    const menge = bestand.fields.menge || 0;
-    const wert = menge * (produkt.fields.einkaufspreis || 0);
-
-    if (!bestandNachKategorie[kategorie]) {
-      bestandNachKategorie[kategorie] = { menge: 0, wert: 0 };
+  function getStatusBadgeVariant(status: string | undefined): "default" | "secondary" | "destructive" | "outline" {
+    switch (status) {
+      case 'bestellt':
+        return 'secondary';
+      case 'bestaetigt':
+        return 'default';
+      case 'teilweise_geliefert':
+        return 'outline';
+      default:
+        return 'secondary';
     }
-    bestandNachKategorie[kategorie].menge += menge;
-    bestandNachKategorie[kategorie].wert += wert;
-  });
+  }
 
-  const kategorieChartData = Object.entries(bestandNachKategorie).map(([key, value]) => ({
-    name: KATEGORIE_LABELS[key] || key,
-    wert: Math.round(value.wert),
-  }));
+  function getQualityIcon(quality: string | undefined) {
+    switch (quality) {
+      case 'bestanden':
+        return <CheckCircle2 className="h-4 w-4 text-green-600" />;
+      case 'mit_maengeln':
+        return <AlertCircle className="h-4 w-4 text-amber-500" />;
+      case 'nicht_bestanden':
+        return <XCircle className="h-4 w-4 text-red-500" />;
+      default:
+        return <Clock className="h-4 w-4 text-muted-foreground" />;
+    }
+  }
 
-  // === BESTELLSTATUS VERTEILUNG ===
-  const statusVerteilung: Record<string, number> = {};
-  data.bestellungen.forEach(b => {
-    const status = b.fields.status || 'entwurf';
-    statusVerteilung[status] = (statusVerteilung[status] || 0) + 1;
-  });
-
-  const statusChartData = Object.entries(statusVerteilung).map(([key, value]) => ({
-    name: STATUS_LABELS[key] || key,
-    value,
-  }));
-
-  // === LETZTE WARENEINGÄNGE ===
-  const letzteWareneingaenge = [...data.wareneingang]
-    .sort((a, b) => {
-      const dateA = a.fields.lieferdatum || a.createdat;
-      const dateB = b.fields.lieferdatum || b.createdat;
-      return new Date(dateB).getTime() - new Date(dateA).getTime();
-    })
-    .slice(0, 5);
+  if (loading) return <LoadingSkeleton />;
+  if (error) return <ErrorState error={error} onRetry={fetchData} />;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-background">
+      {/* Mobile Layout */}
+      <div className="md:hidden">
+        {/* Header */}
+        <header className="sticky top-0 z-10 bg-background border-b px-4 py-3">
+          <h1 className="text-xl font-semibold">Lager</h1>
+        </header>
 
-        {/* Header mit Titel und Action Button */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-2">
-              Lagerverwaltungssystem
-            </h1>
-            <p className="text-slate-600">
-              Übersicht über Bestände, Bestellungen und Wareneingänge
-            </p>
+        <main className="p-4 pb-24 space-y-4">
+          {/* Alert Banner */}
+          {kritischeArtikel.length > 0 && (
+            <Alert variant="destructive" className="border-red-200 bg-red-50">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>{kritischeArtikel.length} Artikel unter Mindestbestand</AlertTitle>
+            </Alert>
+          )}
+
+          {/* Quick Stats Row */}
+          <div className="grid grid-cols-3 gap-3">
+            <Card className="p-3">
+              <div className="flex flex-col">
+                <span className="text-xs text-muted-foreground">Produkte</span>
+                <span className="text-2xl font-bold">{activeProductsCount}</span>
+              </div>
+            </Card>
+            <Card className="p-3">
+              <div className="flex flex-col">
+                <span className="text-xs text-muted-foreground">Offen</span>
+                <span className="text-2xl font-bold">{offeneBestellungen.length}</span>
+              </div>
+            </Card>
+            <Card className="p-3">
+              <div className="flex flex-col">
+                <span className="text-xs text-muted-foreground">Heute</span>
+                <span className="text-2xl font-bold">{wareneingangHeute.length}</span>
+              </div>
+            </Card>
           </div>
 
-          {/* Hauptaktion: Wareneingang erfassen */}
+          {/* Critical Items */}
+          {kritischeArtikel.length > 0 && (
+            <section>
+              <h2 className="text-sm font-medium text-muted-foreground mb-2">Kritische Artikel</h2>
+              <ScrollArea className="w-full whitespace-nowrap">
+                <div className="flex gap-3">
+                  {kritischeArtikel.slice(0, 5).map(item => (
+                    <Card key={item.record_id} className="w-48 shrink-0 p-4">
+                      <div className="space-y-2">
+                        <p className="font-medium text-sm truncate">
+                          {item.produkt_data?.fields.produktname ?? 'Unbekannt'}
+                        </p>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">Bestand</span>
+                          <span className="font-medium">{item.fields.menge ?? 0}</span>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">Minimum</span>
+                          <span>{item.produkt_data?.fields.mindestbestand ?? 0}</span>
+                        </div>
+                        <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-destructive rounded-full"
+                            style={{
+                              width: `${Math.min(((item.deficit ?? 0) / (item.produkt_data?.fields.mindestbestand ?? 1)) * 100, 100)}%`
+                            }}
+                          />
+                        </div>
+                        <p className="text-xs text-destructive font-medium">
+                          Fehlen: {item.deficit}
+                        </p>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
+            </section>
+          )}
+
+          {/* Upcoming Deliveries */}
+          <section>
+            <h2 className="text-sm font-medium text-muted-foreground mb-2">Anstehende Lieferungen</h2>
+            <Card>
+              <div className="divide-y">
+                {anstehendelieferungen.length === 0 ? (
+                  <div className="p-4 text-sm text-muted-foreground text-center">
+                    Keine anstehenden Lieferungen
+                  </div>
+                ) : (
+                  anstehendelieferungen.slice(0, 3).map(order => (
+                    <div key={order.record_id} className="p-3 flex items-center justify-between">
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{order.fields.bestellnummer}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {order.lieferant_data?.fields.firmenname ?? 'Unbekannt'}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0 ml-2">
+                        <p className="text-xs">
+                          {order.fields.erwartetes_lieferdatum
+                            ? format(parseISO(order.fields.erwartetes_lieferdatum), 'dd.MM.', { locale: de })
+                            : '-'}
+                        </p>
+                        <Badge variant={getStatusBadgeVariant(order.fields.status)} className="text-xs">
+                          {STATUS_LABELS[order.fields.status ?? ''] ?? order.fields.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </Card>
+          </section>
+
+          {/* Recent Receipts */}
+          <section>
+            <h2 className="text-sm font-medium text-muted-foreground mb-2">Letzte Wareneingänge</h2>
+            <Card>
+              <div className="divide-y">
+                {recentWareneingang.length === 0 ? (
+                  <div className="p-4 text-sm text-muted-foreground text-center">
+                    Noch keine Wareneingänge
+                  </div>
+                ) : (
+                  recentWareneingang.map(entry => (
+                    <div key={entry.record_id} className="p-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2 min-w-0">
+                        {getQualityIcon(entry.fields.qualitaetspruefung)}
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm truncate">
+                            {entry.produkt_data?.fields.produktname ?? 'Unbekannt'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {entry.fields.gelieferte_menge ?? 0} Stk.
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {entry.fields.lieferdatum
+                          ? format(parseISO(entry.fields.lieferdatum), 'dd.MM.', { locale: de })
+                          : '-'}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </Card>
+          </section>
+        </main>
+
+        {/* Fixed Bottom Action Button */}
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t">
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button size="lg" className="bg-blue-600 hover:bg-blue-700 shadow-lg">
-                <Plus className="h-5 w-5 mr-2" />
+              <Button className="w-full h-14 text-base" size="lg">
+                <Plus className="mr-2 h-5 w-5" />
                 Wareneingang erfassen
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <PackageOpen className="h-5 w-5" />
-                  Neuer Wareneingang
-                </DialogTitle>
-                <DialogDescription>
-                  Erfassen Sie einen neuen Wareneingang und aktualisieren Sie den Lagerbestand.
-                </DialogDescription>
+                <DialogTitle>Wareneingang erfassen</DialogTitle>
               </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="bestellung">Bestellung</Label>
+                  <Select value={formData.bestellung} onValueChange={v => setFormData(f => ({ ...f, bestellung: v }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Bestellung auswählen..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {offeneBestellungen.map(b => (
+                        <SelectItem key={b.record_id} value={b.record_id}>
+                          {b.fields.bestellnummer}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <form onSubmit={handleWareneingangSubmit} className="space-y-4 mt-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="produkt">Produkt *</Label>
+                  <Select value={formData.produkt} onValueChange={v => setFormData(f => ({ ...f, produkt: v }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Produkt auswählen..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {produkte.filter(p => p.fields.aktiv === 'aktiv').map(p => (
+                        <SelectItem key={p.record_id} value={p.record_id}>
+                          {p.fields.produktname}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                  {/* Produkt (Pflichtfeld) */}
-                  <div className="space-y-2">
-                    <Label htmlFor="produkt">Produkt *</Label>
-                    <Select
-                      value={formData.produkt}
-                      onValueChange={(v) => setFormData(prev => ({ ...prev, produkt: v }))}
-                      required
-                    >
-                      <SelectTrigger id="produkt">
-                        <SelectValue placeholder="Produkt auswählen" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {data.produkte.map(p => (
-                          <SelectItem key={p.record_id} value={p.record_id}>
-                            {p.fields.produktname || p.fields.artikelnummer || 'Unbenannt'}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lieferant">Lieferant</Label>
+                  <Select value={formData.lieferant} onValueChange={v => setFormData(f => ({ ...f, lieferant: v }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Lieferant auswählen..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {lieferanten.map(l => (
+                        <SelectItem key={l.record_id} value={l.record_id}>
+                          {l.fields.firmenname}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                  {/* Lieferant */}
-                  <div className="space-y-2">
-                    <Label htmlFor="lieferant">Lieferant</Label>
-                    <Select
-                      value={formData.lieferant}
-                      onValueChange={(v) => setFormData(prev => ({ ...prev, lieferant: v }))}
-                    >
-                      <SelectTrigger id="lieferant">
-                        <SelectValue placeholder="Lieferant auswählen (optional)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {data.lieferanten.map(l => (
-                          <SelectItem key={l.record_id} value={l.record_id}>
-                            {l.fields.firmenname || l.fields.lieferantennummer || 'Unbenannt'}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Bestellung */}
-                  <div className="space-y-2">
-                    <Label htmlFor="bestellung">Bestellung</Label>
-                    <Select
-                      value={formData.bestellung}
-                      onValueChange={(v) => setFormData(prev => ({ ...prev, bestellung: v }))}
-                    >
-                      <SelectTrigger id="bestellung">
-                        <SelectValue placeholder="Bestellung auswählen (optional)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {data.bestellungen.map(b => (
-                          <SelectItem key={b.record_id} value={b.record_id}>
-                            {b.fields.bestellnummer || b.record_id.slice(-8)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Lieferdatum */}
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="lieferdatum">Lieferdatum *</Label>
                     <Input
                       id="lieferdatum"
                       type="date"
                       value={formData.lieferdatum}
-                      onChange={(e) => setFormData(prev => ({ ...prev, lieferdatum: e.target.value }))}
+                      onChange={e => setFormData(f => ({ ...f, lieferdatum: e.target.value }))}
                       required
                     />
                   </div>
-
-                  {/* Gelieferte Menge */}
                   <div className="space-y-2">
-                    <Label htmlFor="gelieferte_menge">Gelieferte Menge *</Label>
+                    <Label htmlFor="menge">Menge *</Label>
                     <Input
-                      id="gelieferte_menge"
+                      id="menge"
                       type="number"
-                      step="0.01"
+                      placeholder="0"
                       value={formData.gelieferte_menge}
-                      onChange={(e) => setFormData(prev => ({ ...prev, gelieferte_menge: e.target.value }))}
+                      onChange={e => setFormData(f => ({ ...f, gelieferte_menge: e.target.value }))}
                       required
                     />
                   </div>
+                </div>
 
-                  {/* Lagerort */}
+                <div className="space-y-2">
+                  <Label htmlFor="lagerort">Lagerort *</Label>
+                  <Select value={formData.lagerort} onValueChange={v => setFormData(f => ({ ...f, lagerort: v }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Lagerort auswählen..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(LAGERORT_LABELS).map(([key, label]) => (
+                        <SelectItem key={key} value={key}>{label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="qualitaet">Qualitätsprüfung</Label>
+                  <Select value={formData.qualitaetspruefung} onValueChange={v => setFormData(f => ({ ...f, qualitaetspruefung: v }))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(QUALITAET_LABELS).map(([key, label]) => (
+                        <SelectItem key={key} value={key}>{label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="lieferschein">Lieferscheinnummer</Label>
+                  <Input
+                    id="lieferschein"
+                    placeholder="z.B. LS-2025-001"
+                    value={formData.lieferscheinnummer}
+                    onChange={e => setFormData(f => ({ ...f, lieferscheinnummer: e.target.value }))}
+                  />
+                </div>
+
+                <Button type="submit" className="w-full" disabled={submitting}>
+                  {submitting ? 'Wird gespeichert...' : 'Wareneingang speichern'}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      {/* Desktop Layout */}
+      <div className="hidden md:block">
+        {/* Header */}
+        <header className="border-b bg-card">
+          <div className="mx-auto max-w-7xl px-8 py-4 flex items-center justify-between">
+            <h1 className="text-2xl font-semibold">Lagerverwaltung</h1>
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Wareneingang erfassen
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Wareneingang erfassen</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="lagerort">Lagerort</Label>
-                    <Select
-                      value={formData.lagerort}
-                      onValueChange={(v) => setFormData(prev => ({ ...prev, lagerort: v }))}
-                    >
-                      <SelectTrigger id="lagerort">
-                        <SelectValue placeholder="Lagerort auswählen (optional)" />
+                    <Label htmlFor="bestellung-d">Bestellung</Label>
+                    <Select value={formData.bestellung} onValueChange={v => setFormData(f => ({ ...f, bestellung: v }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Bestellung auswählen..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {offeneBestellungen.map(b => (
+                          <SelectItem key={b.record_id} value={b.record_id}>
+                            {b.fields.bestellnummer}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="produkt-d">Produkt *</Label>
+                    <Select value={formData.produkt} onValueChange={v => setFormData(f => ({ ...f, produkt: v }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Produkt auswählen..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {produkte.filter(p => p.fields.aktiv === 'aktiv').map(p => (
+                          <SelectItem key={p.record_id} value={p.record_id}>
+                            {p.fields.produktname}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="lieferant-d">Lieferant</Label>
+                    <Select value={formData.lieferant} onValueChange={v => setFormData(f => ({ ...f, lieferant: v }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Lieferant auswählen..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {lieferanten.map(l => (
+                          <SelectItem key={l.record_id} value={l.record_id}>
+                            {l.fields.firmenname}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="lieferdatum-d">Lieferdatum *</Label>
+                      <Input
+                        id="lieferdatum-d"
+                        type="date"
+                        value={formData.lieferdatum}
+                        onChange={e => setFormData(f => ({ ...f, lieferdatum: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="menge-d">Menge *</Label>
+                      <Input
+                        id="menge-d"
+                        type="number"
+                        placeholder="0"
+                        value={formData.gelieferte_menge}
+                        onChange={e => setFormData(f => ({ ...f, gelieferte_menge: e.target.value }))}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="lagerort-d">Lagerort *</Label>
+                    <Select value={formData.lagerort} onValueChange={v => setFormData(f => ({ ...f, lagerort: v }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Lagerort auswählen..." />
                       </SelectTrigger>
                       <SelectContent>
                         {Object.entries(LAGERORT_LABELS).map(([key, label]) => (
@@ -437,14 +727,10 @@ export default function Dashboard() {
                     </Select>
                   </div>
 
-                  {/* Qualitätsprüfung */}
                   <div className="space-y-2">
-                    <Label htmlFor="qualitaetspruefung">Qualitätsprüfung</Label>
-                    <Select
-                      value={formData.qualitaetspruefung}
-                      onValueChange={(v) => setFormData(prev => ({ ...prev, qualitaetspruefung: v }))}
-                    >
-                      <SelectTrigger id="qualitaetspruefung">
+                    <Label htmlFor="qualitaet-d">Qualitätsprüfung</Label>
+                    <Select value={formData.qualitaetspruefung} onValueChange={v => setFormData(f => ({ ...f, qualitaetspruefung: v }))}>
+                      <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -455,419 +741,266 @@ export default function Dashboard() {
                     </Select>
                   </div>
 
-                  {/* Lieferscheinnummer */}
                   <div className="space-y-2">
-                    <Label htmlFor="lieferscheinnummer">Lieferscheinnummer</Label>
+                    <Label htmlFor="lieferschein-d">Lieferscheinnummer</Label>
                     <Input
-                      id="lieferscheinnummer"
-                      type="text"
+                      id="lieferschein-d"
+                      placeholder="z.B. LS-2025-001"
                       value={formData.lieferscheinnummer}
-                      onChange={(e) => setFormData(prev => ({ ...prev, lieferscheinnummer: e.target.value }))}
+                      onChange={e => setFormData(f => ({ ...f, lieferscheinnummer: e.target.value }))}
                     />
                   </div>
 
-                  {/* Erfasst von */}
-                  <div className="space-y-2">
-                    <Label htmlFor="erfasst_von">Erfasst von</Label>
-                    <Input
-                      id="erfasst_von"
-                      type="text"
-                      value={formData.erfasst_von}
-                      onChange={(e) => setFormData(prev => ({ ...prev, erfasst_von: e.target.value }))}
-                    />
-                  </div>
-                </div>
-
-                {/* Abweichungen */}
-                <div className="space-y-2">
-                  <Label htmlFor="abweichungen">Abweichungen / Notizen</Label>
-                  <Textarea
-                    id="abweichungen"
-                    value={formData.abweichungen}
-                    onChange={(e) => setFormData(prev => ({ ...prev, abweichungen: e.target.value }))}
-                    rows={3}
-                  />
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <Button type="submit" className="flex-1" disabled={submitting}>
+                  <Button type="submit" className="w-full" disabled={submitting}>
                     {submitting ? 'Wird gespeichert...' : 'Wareneingang speichern'}
                   </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setDialogOpen(false)}
-                    disabled={submitting}
-                  >
-                    Abbrechen
-                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </header>
+
+        <main className="mx-auto max-w-7xl px-8 py-6 space-y-6">
+          {/* KPI Cards */}
+          <div className="grid grid-cols-4 gap-4">
+            {/* Hero KPI: Critical Items */}
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Kritische Artikel
+                </CardTitle>
+                <AlertTriangle className={`h-4 w-4 ${kritischeArtikel.length > 0 ? 'text-destructive' : 'text-muted-foreground'}`} />
+              </CardHeader>
+              <CardContent>
+                <div className={`text-4xl font-bold ${kritischeArtikel.length > 0 ? 'text-destructive' : 'text-green-600'}`}>
+                  {kritischeArtikel.length}
                 </div>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  von {activeProductsCount} Produkten
+                </p>
+              </CardContent>
+            </Card>
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Total Products */}
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Gesamtprodukte
+                </CardTitle>
+                <Package className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">{activeProductsCount}</div>
+                <p className="text-xs text-muted-foreground mt-1">aktive Artikel</p>
+              </CardContent>
+            </Card>
 
-          {/* Gesamtbestandswert */}
-          <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-slate-600">
-                Gesamtbestandswert
-              </CardTitle>
-              <Package className="h-5 w-5 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-slate-900">
-                {gesamtbestandswert.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
-              </div>
-              <p className="text-xs text-slate-500 mt-1">
-                {data.lagerbestand.length} Lagerpositionen
-              </p>
-            </CardContent>
-          </Card>
+            {/* Open Orders */}
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Offene Bestellungen
+                </CardTitle>
+                <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">{offeneBestellungen.length}</div>
+                <p className="text-xs text-muted-foreground mt-1">ausstehend</p>
+              </CardContent>
+            </Card>
 
-          {/* Offene Bestellungen */}
-          <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-slate-600">
-                Offene Bestellungen
-              </CardTitle>
-              <ShoppingCart className="h-5 w-5 text-amber-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-slate-900">
-                {offenerBestellwert.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
-              </div>
-              <p className="text-xs text-slate-500 mt-1">
-                {offeneBestellungen.length} aktive Bestellung(en)
-              </p>
-            </CardContent>
-          </Card>
+            {/* Today's Receipts */}
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Wareneingänge heute
+                </CardTitle>
+                <Truck className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">{wareneingangHeute.length}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {format(new Date(), 'dd. MMM yyyy', { locale: de })}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
 
-          {/* Lieferanten */}
-          <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-slate-600">
-                Lieferanten
-              </CardTitle>
-              <Users className="h-5 w-5 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-slate-900">
-                {aktiveLieferantenCount}
-              </div>
-              <p className="text-xs text-slate-500 mt-1">
-                Registrierte Lieferanten
-              </p>
-            </CardContent>
-          </Card>
+          {/* Main Content: Two columns */}
+          <div className="grid grid-cols-3 gap-6">
+            {/* Left column (2/3) */}
+            <div className="col-span-2 space-y-6">
+              {/* Low Stock Alert Table */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-destructive" />
+                    Kritische Artikel
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {kritischeArtikel.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <CheckCircle2 className="h-12 w-12 mx-auto mb-2 text-green-500" />
+                      <p>Alle Artikel sind ausreichend bevorratet</p>
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Produkt</TableHead>
+                          <TableHead>Artikelnr.</TableHead>
+                          <TableHead className="text-right">Bestand</TableHead>
+                          <TableHead className="text-right">Minimum</TableHead>
+                          <TableHead className="text-right">Fehlmenge</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {kritischeArtikel.slice(0, 10).map(item => (
+                          <TableRow key={item.record_id} className="hover:bg-muted/50">
+                            <TableCell className="font-medium">
+                              {item.produkt_data?.fields.produktname ?? 'Unbekannt'}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {item.produkt_data?.fields.artikelnummer ?? '-'}
+                            </TableCell>
+                            <TableCell className="text-right">{item.fields.menge ?? 0}</TableCell>
+                            <TableCell className="text-right">
+                              {item.produkt_data?.fields.mindestbestand ?? 0}
+                            </TableCell>
+                            <TableCell className="text-right text-destructive font-medium">
+                              -{item.deficit}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
 
-          {/* Kritische Bestände */}
-          <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-slate-600">
-                Kritische Bestände
-              </CardTitle>
-              <AlertTriangle className="h-5 w-5 text-red-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-slate-900">
-                {kritischeBestaende.length}
-              </div>
-              <p className="text-xs text-slate-500 mt-1">
-                Unter Mindestbestand
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+              {/* Chart: Stock by Location */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Bestand nach Lagerort</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={stockByLocation} layout="vertical" margin={{ left: 80 }}>
+                        <XAxis type="number" tick={{ fontSize: 12 }} stroke="hsl(215 15% 47%)" />
+                        <YAxis
+                          type="category"
+                          dataKey="name"
+                          tick={{ fontSize: 12 }}
+                          stroke="hsl(215 15% 47%)"
+                          width={75}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: 'hsl(0 0% 100%)',
+                            border: '1px solid hsl(210 15% 90%)',
+                            borderRadius: '8px'
+                          }}
+                          formatter={(value: number) => [value, 'Bestand']}
+                        />
+                        <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                          {stockByLocation.map((_, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={`hsl(173 58% ${39 + index * 5}%)`}
+                            />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-        {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-          {/* Lagerbestand nach Kategorie */}
-          <Card className="bg-white shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-blue-600" />
-                Lagerbestandswert nach Kategorie
-              </CardTitle>
-              <CardDescription>
-                Verteilung des Bestandswerts auf Produktkategorien
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {kategorieChartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={kategorieChartData}>
-                    <XAxis
-                      dataKey="name"
-                      angle={-45}
-                      textAnchor="end"
-                      height={100}
-                      tick={{ fontSize: 12 }}
-                    />
-                    <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip
-                      formatter={(value: number) => value.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
-                    />
-                    <Bar dataKey="wert" fill="#3b82f6" radius={[8, 8, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-[300px] flex items-center justify-center text-slate-400">
-                  Keine Daten vorhanden
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Bestellstatus Verteilung */}
-          <Card className="bg-white shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ShoppingCart className="h-5 w-5 text-amber-600" />
-                Bestellstatus Übersicht
-              </CardTitle>
-              <CardDescription>
-                Verteilung der Bestellungen nach Status
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {statusChartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={statusChartData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      outerRadius={100}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {statusChartData.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-[300px] flex items-center justify-center text-slate-400">
-                  Keine Bestellungen vorhanden
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Kritische Bestände & Letzte Wareneingänge */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-          {/* Kritische Bestände Details */}
-          <Card className="bg-white shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-red-600" />
-                Produkte unter Mindestbestand
-              </CardTitle>
-              <CardDescription>
-                Produkte, die nachbestellt werden sollten
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {kritischeBestaende.length > 0 ? (
-                <div className="space-y-3 max-h-[400px] overflow-y-auto">
-                  {kritischeBestaende.slice(0, 10).map(bestand => {
-                    const produktId = extractRecordId(bestand.fields.produkt);
-                    const produkt = produktId ? data.produkte.find(p => p.record_id === produktId) : null;
-                    const menge = bestand.fields.menge || 0;
-                    const mindestbestand = produkt?.fields.mindestbestand || 0;
-                    const fehlmenge = mindestbestand - menge;
-
-                    return (
-                      <div key={bestand.record_id} className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
-                        <div className="flex-1">
-                          <p className="font-medium text-slate-900">
-                            {produkt?.fields.produktname || 'Unbekanntes Produkt'}
-                          </p>
-                          <p className="text-sm text-slate-600">
-                            Bestand: {menge} / Mindest: {mindestbestand}
-                          </p>
-                        </div>
-                        <Badge variant="destructive" className="ml-2">
-                          -{fehlmenge.toFixed(1)}
-                        </Badge>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <CheckCircle className="h-12 w-12 text-green-500 mb-3" />
-                  <p className="text-slate-600 font-medium">Alle Bestände sind ausreichend</p>
-                  <p className="text-sm text-slate-500">Keine kritischen Bestände gefunden</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Letzte Wareneingänge */}
-          <Card className="bg-white shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <PackageOpen className="h-5 w-5 text-green-600" />
-                Letzte Wareneingänge
-              </CardTitle>
-              <CardDescription>
-                Die 5 neuesten Wareneingänge
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {letzteWareneingaenge.length > 0 ? (
-                <div className="space-y-3 max-h-[400px] overflow-y-auto">
-                  {letzteWareneingaenge.map(eingang => {
-                    const produktId = extractRecordId(eingang.fields.produkt);
-                    const produkt = produktId ? data.produkte.find(p => p.record_id === produktId) : null;
-                    const lieferantId = extractRecordId(eingang.fields.lieferant);
-                    const lieferant = lieferantId ? data.lieferanten.find(l => l.record_id === lieferantId) : null;
-
-                    const qualitaet = eingang.fields.qualitaetspruefung || 'nicht_geprueft';
-                    const qualitaetColor =
-                      qualitaet === 'bestanden' ? 'bg-green-100 text-green-700 border-green-200' :
-                      qualitaet === 'mit_maengeln' ? 'bg-amber-100 text-amber-700 border-amber-200' :
-                      qualitaet === 'nicht_bestanden' ? 'bg-red-100 text-red-700 border-red-200' :
-                      'bg-slate-100 text-slate-700 border-slate-200';
-
-                    return (
-                      <div key={eingang.record_id} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1">
-                            <p className="font-medium text-slate-900">
-                              {produkt?.fields.produktname || 'Unbekanntes Produkt'}
-                            </p>
-                            <p className="text-sm text-slate-600">
-                              {lieferant?.fields.firmenname || 'Kein Lieferant'}
+            {/* Right column (1/3) */}
+            <div className="space-y-6">
+              {/* Upcoming Deliveries */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Anstehende Lieferungen</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {anstehendelieferungen.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Keine anstehenden Lieferungen
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {anstehendelieferungen.map(order => (
+                        <div
+                          key={order.record_id}
+                          className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                        >
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm">{order.fields.bestellnummer}</p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {order.lieferant_data?.fields.firmenname ?? 'Unbekannt'}
                             </p>
                           </div>
-                          <Badge className={qualitaetColor}>
-                            {QUALITAET_LABELS[qualitaet] || qualitaet}
-                          </Badge>
+                          <div className="text-right shrink-0 ml-2">
+                            <p className="text-sm font-medium">
+                              {order.fields.erwartetes_lieferdatum
+                                ? format(parseISO(order.fields.erwartetes_lieferdatum), 'dd.MM.', { locale: de })
+                                : '-'}
+                            </p>
+                            <Badge variant={getStatusBadgeVariant(order.fields.status)} className="text-xs">
+                              {STATUS_LABELS[order.fields.status ?? ''] ?? order.fields.status}
+                            </Badge>
+                          </div>
                         </div>
-                        <div className="flex items-center justify-between text-sm text-slate-500">
-                          <span>Menge: {eingang.fields.gelieferte_menge || 0}</span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {eingang.fields.lieferdatum
-                              ? format(new Date(eingang.fields.lieferdatum), 'dd.MM.yyyy', { locale: de })
-                              : 'Kein Datum'
-                            }
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Recent Receipts */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Letzte Wareneingänge</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {recentWareneingang.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Noch keine Wareneingänge
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {recentWareneingang.map(entry => (
+                        <div
+                          key={entry.record_id}
+                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                        >
+                          {getQualityIcon(entry.fields.qualitaetspruefung)}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">
+                              {entry.produkt_data?.fields.produktname ?? 'Unbekannt'}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {entry.fields.gelieferte_menge ?? 0} Stk.
+                            </p>
+                          </div>
+                          <span className="text-xs text-muted-foreground shrink-0">
+                            {entry.fields.lieferdatum
+                              ? format(parseISO(entry.fields.lieferdatum), 'dd.MM.', { locale: de })
+                              : '-'}
                           </span>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <PackageOpen className="h-12 w-12 text-slate-300 mb-3" />
-                  <p className="text-slate-600 font-medium">Noch keine Wareneingänge</p>
-                  <p className="text-sm text-slate-500">Erfassen Sie Ihren ersten Wareneingang</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Offene Bestellungen Details */}
-        <Card className="bg-white shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5 text-amber-600" />
-              Aktuelle Bestellungen
-            </CardTitle>
-            <CardDescription>
-              Übersicht der offenen und aktuellen Bestellungen
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {offeneBestellungen.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-50 border-b">
-                    <tr>
-                      <th className="text-left p-3 font-medium text-slate-700">Bestellnummer</th>
-                      <th className="text-left p-3 font-medium text-slate-700">Produkt</th>
-                      <th className="text-left p-3 font-medium text-slate-700">Lieferant</th>
-                      <th className="text-right p-3 font-medium text-slate-700">Menge</th>
-                      <th className="text-right p-3 font-medium text-slate-700">Gesamtpreis</th>
-                      <th className="text-left p-3 font-medium text-slate-700">Status</th>
-                      <th className="text-left p-3 font-medium text-slate-700">Lieferdatum</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {offeneBestellungen.slice(0, 10).map(bestellung => {
-                      const produktId = extractRecordId(bestellung.fields.produkt);
-                      const produkt = produktId ? data.produkte.find(p => p.record_id === produktId) : null;
-                      const lieferantId = extractRecordId(bestellung.fields.lieferant);
-                      const lieferant = lieferantId ? data.lieferanten.find(l => l.record_id === lieferantId) : null;
-
-                      const status = bestellung.fields.status || 'entwurf';
-                      const statusColor =
-                        status === 'geliefert' ? 'bg-green-100 text-green-700' :
-                        status === 'teilweise_geliefert' ? 'bg-amber-100 text-amber-700' :
-                        status === 'bestaetigt' ? 'bg-blue-100 text-blue-700' :
-                        status === 'bestellt' ? 'bg-purple-100 text-purple-700' :
-                        status === 'storniert' ? 'bg-red-100 text-red-700' :
-                        'bg-slate-100 text-slate-700';
-
-                      return (
-                        <tr key={bestellung.record_id} className="border-b hover:bg-slate-50">
-                          <td className="p-3 font-medium">
-                            {bestellung.fields.bestellnummer || bestellung.record_id.slice(-8)}
-                          </td>
-                          <td className="p-3">
-                            {produkt?.fields.produktname || 'Unbekannt'}
-                          </td>
-                          <td className="p-3">
-                            {lieferant?.fields.firmenname || 'Unbekannt'}
-                          </td>
-                          <td className="p-3 text-right">
-                            {bestellung.fields.bestellmenge || 0}
-                          </td>
-                          <td className="p-3 text-right font-medium">
-                            {(bestellung.fields.gesamtpreis || 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
-                          </td>
-                          <td className="p-3">
-                            <Badge className={statusColor}>
-                              {STATUS_LABELS[status] || status}
-                            </Badge>
-                          </td>
-                          <td className="p-3">
-                            {bestellung.fields.erwartetes_lieferdatum
-                              ? format(new Date(bestellung.fields.erwartetes_lieferdatum), 'dd.MM.yyyy', { locale: de })
-                              : '-'
-                            }
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <ShoppingCart className="h-12 w-12 text-slate-300 mb-3" />
-                <p className="text-slate-600 font-medium">Keine offenen Bestellungen</p>
-                <p className="text-sm text-slate-500">Alle Bestellungen sind abgeschlossen</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </main>
       </div>
     </div>
   );
