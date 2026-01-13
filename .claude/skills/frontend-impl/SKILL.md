@@ -19,6 +19,27 @@ allowed-tools:
 
 You are a React/TypeScript developer. Your ONLY job is to **implement exactly what design_brief.md describes**.
 
+## ⚠️ CRITICAL: Build a COMPLETE, PRODUCTION-READY Dashboard
+
+**This is not a prototype. This is not a demo. This is a production dashboard.**
+
+You MUST:
+- **Implement EVERY feature** described in design_brief.md - do not skip anything
+- **Show ALL information** users need - no placeholder "coming soon" sections
+- **Include EVERY action** - all CRUD operations the user needs must work
+- **Make important data clickable** - users must be able to drill down into details
+- **Handle all states** - loading, empty, error states for every component
+- **Be ready for real users** - this goes live immediately after you build it
+
+**DO NOT:**
+- ❌ Skip features because they seem complex
+- ❌ Leave any section incomplete with "TODO" comments
+- ❌ Show summary data without drill-down capability
+- ❌ Implement only the "happy path"
+- ❌ Create a read-only view when actions are needed
+
+---
+
 ## ⚠️ CRITICAL: You Do NOT Make Design Decisions
 
 All design decisions are ALREADY MADE in `design_brief.md`. The designer wrote detailed instructions - follow them word for word.
@@ -315,9 +336,10 @@ Before completing, verify EACH item against design_brief.md:
 - [ ] Colors are complete hsl() functions (not raw values)
 
 ### Layout Verification
-- [ ] Mobile layout matches EXACTLY design_brief.md Section 4
-- [ ] Desktop layout matches EXACTLY design_brief.md Section 5
-- [ ] Hero element is what Section 6 describes
+- [ ] Mobile layout matches EXACTLY design_brief.md Section 4 (check asymmetry!)
+- [ ] Desktop layout matches EXACTLY design_brief.md Section 5 (check column percentages!)
+- [ ] Hero element is dominant as described (size, position, whitespace)
+- [ ] Layout is NOT a boring equal-grid (verify asymmetry exists!)
 - [ ] Section order matches the brief
 
 ### Components Verification
@@ -334,6 +356,33 @@ Before completing, verify EACH item against design_brief.md:
 ### Technical
 - [ ] `npm run build` passes
 - [ ] No console errors
+
+### ⚠️ COMPLETENESS VERIFICATION (CRITICAL!)
+
+**You MUST verify the dashboard is 100% complete before finishing:**
+
+- [ ] **Every app in app_metadata.json is used** - no data sources ignored
+- [ ] **All CRUD operations work:**
+  - [ ] Can CREATE new records (primary action button works)
+  - [ ] Can READ all records (data displays correctly)
+  - [ ] Can UPDATE records (edit functionality exists where needed)
+  - [ ] Can DELETE records (delete option exists where appropriate)
+- [ ] **All data is accessible:**
+  - [ ] KPIs clickable → show breakdown/details
+  - [ ] List items clickable → show full record details
+  - [ ] Charts clickable → show related data
+  - [ ] No "dead ends" where users can't access more info
+- [ ] **All states handled:**
+  - [ ] Loading states for every data fetch
+  - [ ] Empty states with helpful guidance
+  - [ ] Error states with retry options
+- [ ] **Nothing is placeholder:**
+  - [ ] No "TODO" comments in code
+  - [ ] No "Coming soon" messages
+  - [ ] No hardcoded demo data
+  - [ ] All features are functional
+
+**If ANY item above is unchecked, the dashboard is NOT complete. Fix it before deploying.**
 
 ---
 
@@ -352,6 +401,106 @@ The dashboard is complete when:
 9. ✅ No console errors in browser
 10. ✅ Business logic correct
 11. ✅ Living Apps API rules followed (dates, applookup, response)
+12. ✅ **All features complete** - nothing skipped or left as TODO
+13. ✅ **Drill-down works** - clicking on data reveals details
+14. ✅ **All CRUD operations** - users can create, view, update, delete as needed
+
+---
+
+## ⚠️ Interactive Data & Drill-Down (REQUIRED)
+
+Dashboards are NOT static displays. Users expect to interact with data.
+
+### Make Important Data Clickable
+
+Every piece of important information should be clickable to reveal more details:
+
+| Element | Clicking Should... |
+|---------|-------------------|
+| KPI card | Show breakdown, trend, or related records |
+| List item | Open detail view or edit dialog |
+| Chart data point | Show details for that data point |
+| Summary count | Show the list of items being counted |
+| Related record reference | Navigate to or show that record |
+
+### Implementation Pattern: Clickable Cards with Dialog
+
+```typescript
+function KPICard({ title, value, details }: KPIProps) {
+  const [open, setOpen] = useState(false);
+  
+  return (
+    <>
+      <Card 
+        className="cursor-pointer hover:shadow-md transition-shadow"
+        onClick={() => setOpen(true)}
+      >
+        <CardHeader>
+          <CardTitle className="text-sm">{title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-3xl font-bold">{value}</div>
+        </CardContent>
+      </Card>
+      
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{title} - Details</DialogTitle>
+          </DialogHeader>
+          {/* Show breakdown, list of items, trend chart, etc. */}
+          <DetailView data={details} />
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+```
+
+### Implementation Pattern: Clickable List Items
+
+```typescript
+function RecordList({ records }: { records: Record[] }) {
+  const [selectedRecord, setSelectedRecord] = useState<Record | null>(null);
+  
+  return (
+    <>
+      <div className="space-y-2">
+        {records.map(record => (
+          <div
+            key={record.record_id}
+            className="p-3 rounded-lg hover:bg-muted cursor-pointer transition-colors"
+            onClick={() => setSelectedRecord(record)}
+          >
+            <div className="font-medium">{record.name}</div>
+            <div className="text-sm text-muted-foreground">{record.summary}</div>
+          </div>
+        ))}
+      </div>
+      
+      <Dialog open={!!selectedRecord} onOpenChange={() => setSelectedRecord(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{selectedRecord?.name}</DialogTitle>
+          </DialogHeader>
+          <RecordDetail record={selectedRecord} />
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+```
+
+### What Drill-Down Should Show
+
+When a user clicks on a summary element, show:
+
+1. **Full data** - All fields, not just the summary
+2. **Related records** - Linked items from other apps
+3. **History/Timeline** - When things happened
+4. **Actions** - Edit, delete, or related actions
+
+**The user should never feel like they're missing information.** If data exists in the system, they should be able to access it through the dashboard.
 
 ---
 

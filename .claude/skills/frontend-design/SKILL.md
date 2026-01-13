@@ -105,6 +105,8 @@ These fonts are so common they signal "no design thought went into this."
 
 Layout is the foundation of good UX. Spend the most time here.
 
+**⚠️ The #1 reason dashboards look like "AI slop" is a boring, symmetrical grid layout.** Real designers create visual tension and flow. Your layout must feel hand-crafted by a senior product designer for THIS specific app.
+
 ### Think Like a Product Designer
 
 Before drawing anything, answer:
@@ -127,6 +129,79 @@ Before drawing anything, answer:
    - Every element must earn its place
    - When in doubt, leave it out
 
+---
+
+### Escape the Grid: Asymmetry & Visual Flow
+
+**Generic AI dashboards look like this:**
+```
+┌────────┐ ┌────────┐ ┌────────┐
+│  KPI   │ │  KPI   │ │  KPI   │    ← Equal-sized boxes
+└────────┘ └────────┘ └────────┘
+┌─────────────────────────────┐
+│          Chart              │    ← Full-width chart
+└─────────────────────────────┘
+┌─────────────────────────────┐
+│          Table              │    ← Full-width table
+└─────────────────────────────┘
+```
+
+**Professional designers create layouts like this:**
+```
+┌──────────────────┐  ┌────────┐
+│                  │  │ Small  │
+│    HERO KPI      │  │  KPI   │    ← Asymmetric sizing
+│  (60% width)     │  ├────────┤
+│                  │  │ Small  │
+└──────────────────┘  │  KPI   │
+                      └────────┘
+
+┌───────────────┐  ┌───────────────────┐
+│   Chart       │  │                   │
+│   (40%)       │  │   Recent Items    │    ← Unequal columns
+│               │  │      (60%)        │
+└───────────────┘  └───────────────────┘
+```
+
+### Layout Techniques That Create Distinction
+
+**1. Asymmetric Column Splits**
+- Instead of 50/50, use 60/40, 70/30, or 2/3 + 1/3
+- The larger area draws attention - use it for the hero
+- Smaller areas feel supporting/secondary
+
+**2. Visual Weight Variation**
+- ONE element should be obviously dominant (hero)
+- Some elements can be small, compact, muted
+- Not everything needs to be a card - inline stats work too
+
+**3. Negative Space as Design**
+- Don't fill every pixel
+- Let the hero breathe with generous margins
+- Empty space guides the eye
+
+**4. Breaking the Grid Intentionally**
+- An element that spans an unexpected width
+- A floating action button
+- An inline stat row between card sections
+- A sidebar summary on desktop
+
+**5. Visual Grouping**
+- Related items clustered without card borders
+- A tinted background section for one category
+- Separator lines instead of equal cards
+
+### Anti-Patterns to AVOID
+
+| Generic Pattern | Better Alternative |
+|----------------|-------------------|
+| 3 equal KPI cards in a row | 1 hero KPI + 2 small supporting KPIs |
+| Full-width chart | Chart + related stats side-by-side |
+| Everything in cards | Mix cards, inline text, badges |
+| Uniform spacing | Tighter spacing within groups, more between groups |
+| All same border-radius | Hero with larger radius, details with smaller |
+| Every stat same size | Numbers scaled by importance (hero: 48px, secondary: 24px) |
+
 ### Mobile Layout (Phone)
 
 Design mobile as a **completely separate experience**, not a squeezed desktop.
@@ -136,18 +211,27 @@ Design mobile as a **completely separate experience**, not a squeezed desktop.
 - **Thumb-friendly** - Important actions in bottom half
 - **Focused** - Show less, but show it well
 - **Progressive** - Reveal details on interaction
+- **Asymmetry still matters** - Hero section can take 60% of viewport, secondary info compact
 
 **Mobile Questions:**
 - What can you REMOVE entirely for mobile? (Be aggressive)
 - What needs to be LARGER for comfortable touch?
 - What should be HIDDEN behind a tap?
 - Where should the primary action live? (Thumb zone)
+- How does the hero stand out from other content?
+
+**Mobile Layout Ideas:**
+- Hero KPI takes entire top fold, everything else scrolls below
+- Compact horizontal scroll for secondary KPIs
+- Inline summary row (not cards) for quick stats
+- Bottom sheet for additional details
 
 ### Desktop Layout
 
-Design desktop to take full advantage of horizontal space.
+Design desktop to take full advantage of horizontal space with intentional asymmetry.
 
 **Desktop Principles:**
+- **Asymmetric columns** - 60/40 or 70/30 splits, not 50/50
 - **Horizontal density** - Side-by-side information
 - **Hover reveals** - Secondary info on hover
 - **Peripheral vision** - Context without overwhelming
@@ -155,8 +239,16 @@ Design desktop to take full advantage of horizontal space.
 
 **Desktop Questions:**
 - How does the extra width add value? (Not just stretching)
+- Which side gets the hero element?
 - What information benefits from side-by-side comparison?
 - What hover states add useful information?
+- Where can you break the grid intentionally?
+
+**Desktop Layout Ideas:**
+- Wide left column (hero + chart) + narrow right column (recent activity)
+- Full-width hero banner, then 3 unequal columns below
+- Sidebar with key stats, main area with detailed views
+- Sticky summary header while scrolling through details
 
 ---
 
@@ -212,10 +304,28 @@ List actions in priority order, e.g.:
 
 ## 2. What Makes This Design Distinctive
 
+[This section is CRITICAL. Describe what makes this design feel custom-designed for THIS app, NOT a generic template.]
+
+### Visual Identity
 [One paragraph explaining what makes this design special and memorable.
 NOT generic descriptions like "clean and modern" - be specific!
-Example: "The warm cream background with terracotta accents creates a 
-grounded, earthy feel that suits a fitness app focused on sustainable habits."]
+Example: "The warm cream background with terracotta accents creates a grounded, earthy feel that suits a fitness app focused on sustainable habits."]
+
+### Layout Strategy
+[Describe the asymmetric layout approach:
+- How is the hero element emphasized? (size, position, whitespace)
+- What is the column split on desktop? (e.g., "60/40 left-heavy")
+- How do secondary elements support without competing?
+- What visual tension or flow did you create?
+Example: "The hero KPI occupies 65% of the top area with massive typography, while two secondary KPIs stack vertically in a narrow right column. This creates a clear 'one big thing + details' hierarchy."]
+
+### Unique Element
+[Describe ONE specific design element that sets this apart:
+- A distinctive card style
+- An unusual color accent placement
+- A unique way of displaying data
+- A layout break that creates interest
+Example: "The progress ring around the hero KPI uses a thick 8px stroke with rounded caps and a subtle glow effect, making the weekly goal feel almost game-like."]
 
 ---
 
@@ -257,6 +367,12 @@ Describe exactly what makes it interesting, or explain why plain is intentional.
 
 Design mobile as a COMPLETELY SEPARATE experience, not squeezed desktop.
 
+### Layout Approach
+[Describe how you're creating visual hierarchy on mobile:
+- Does the hero dominate the first viewport?
+- Is there asymmetry in how sections are sized?
+- What creates visual interest beyond stacked cards?]
+
 ### What Users See (Top to Bottom)
 
 **Header:**
@@ -265,11 +381,12 @@ Design mobile as a COMPLETELY SEPARATE experience, not squeezed desktop.
 **Hero Section (The FIRST thing users see):**
 [Describe the most important element in detail:
 - What is it? (number, chart, status?)
-- How big is it? (give relative sizes)
+- How big is it? (give relative sizes - e.g., "takes 60% of viewport height")
+- Styling that makes it dominant (large font, color, whitespace)
 - Why is this the hero? (explain the user need it answers)]
 
 **Section 2: [Name]**
-[Describe this section - what it contains, why it's here]
+[Describe this section - what it contains, why it's here, how it contrasts with hero]
 
 **Section 3: [Name]**
 [Continue for each section]
@@ -283,21 +400,42 @@ Design mobile as a COMPLETELY SEPARATE experience, not squeezed desktop.
 ### Touch Targets
 [Any specific notes about button sizes, tap areas?]
 
+### Interactive Elements
+[Which elements are tappable to reveal more details?
+Users expect to tap on important data to drill down.]
+
 ---
 
 ## 5. Desktop Layout
 
 ### Overall Structure
-[Describe the layout: single column? Two columns? Sidebar?
-How is the horizontal space used meaningfully?]
+[Describe the layout with specific proportions:
+- NOT "two columns" but "60/40 left-heavy split" or "70/30 main + sidebar"
+- Describe the visual flow: where does the eye go first, second, third?
+- How is asymmetry creating visual interest?]
 
 ### Column Layout
-[If multi-column, describe what goes where:
-- Left column (X%): ...
-- Right column (X%): ...]
+[If multi-column, describe what goes where with exact percentages:
+- Left column (X%): [what content, why this width]
+- Right column (X%): [what content, why this width]
+- OR describe a more complex arrangement]
+
+### Layout Diagram (ASCII)
+[Draw a simple ASCII diagram showing the asymmetric layout:
+```
+┌──────────────────┐  ┌────────┐
+│    HERO KPI      │  │ KPI 2  │
+│      (60%)       │  │ KPI 3  │
+└──────────────────┘  └────────┘
+```
+This helps the implementer understand the exact layout structure.]
 
 ### What Appears on Hover
 [What extra information is revealed when hovering over elements?]
+
+### Clickable/Interactive Areas
+[Which elements open detail views or dialogs when clicked?
+Important data should be clickable for drill-down.]
 
 ---
 
@@ -472,11 +610,19 @@ Before finalizing design_brief.md:
 - [ ] Is the font choice appropriate and NOT from forbidden list?
 - [ ] Does the color accent feel considered, not generic?
 
-### Layout & UX
-- [ ] Is there ONE clear hero element?
+### Layout & UX (CRITICAL FOR AVOIDING AI SLOP!)
+- [ ] Is there ONE clear hero element that dominates?
+- [ ] **Is the layout ASYMMETRIC?** (Not equal columns or equal-sized cards)
+- [ ] **Are column splits specified with percentages?** (60/40, 70/30, NOT 50/50)
 - [ ] Is mobile designed FOR mobile (not just smaller)?
 - [ ] Does desktop use horizontal space meaningfully?
+- [ ] **Does the ASCII diagram show visual tension, not a boring grid?**
 - [ ] Would this get featured in the App Store?
+
+### Interactivity
+- [ ] Is important data marked as clickable/interactive?
+- [ ] Are drill-down interactions specified?
+- [ ] Do users have access to ALL information through the dashboard?
 
 ### Information
 - [ ] Is the visual hierarchy clear?
@@ -487,6 +633,7 @@ Before finalizing design_brief.md:
 - [ ] Is every section detailed enough that someone else could implement it?
 - [ ] Are there WHY explanations for major decisions?
 - [ ] Are the CSS variables complete and ready to copy?
+- [ ] Is the Layout Strategy section filled out with specific proportions?
 
 ### Technical
 - [ ] Are all colors complete hsl() functions?
@@ -502,6 +649,8 @@ Before finalizing design_brief.md:
 3. **Be specific** - "Large number" is vague, "48px bold" is specific
 4. **Minimal ≠ Generic** - Minimal can be distinctive
 5. **Layout is everything** - 80% of design time on layout
-6. **Mobile ≠ Small Desktop** - Separate experiences
-7. **One memorable detail** - What makes this special?
-8. **App Store quality** - Would Apple feature this?
+6. **Asymmetry creates interest** - Never equal columns, never equal-sized cards
+7. **Mobile ≠ Small Desktop** - Separate experiences
+8. **One memorable detail** - What makes this special?
+9. **App Store quality** - Would Apple feature this?
+10. **Data is interactive** - Users click to drill down, not just look

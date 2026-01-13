@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -42,38 +43,38 @@
 }
 
 :root {
-  --radius: 0.5rem;
-  --background: hsl(210 20% 98%);
-  --foreground: hsl(215 25% 17%);
+  --radius: 0.75rem;
+  --background: hsl(40 10% 97%);
+  --foreground: hsl(220 15% 20%);
   --card: hsl(0 0% 100%);
-  --card-foreground: hsl(215 25% 17%);
+  --card-foreground: hsl(220 15% 20%);
   --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(215 25% 17%);
-  --primary: hsl(173 58% 39%);
-  --primary-foreground: hsl(0 0% 100%);
-  --secondary: hsl(210 15% 96%);
-  --secondary-foreground: hsl(215 25% 17%);
-  --muted: hsl(210 15% 96%);
-  --muted-foreground: hsl(215 15% 47%);
-  --accent: hsl(173 58% 39%);
-  --accent-foreground: hsl(0 0% 100%);
-  --destructive: hsl(0 84% 60%);
-  --border: hsl(210 15% 90%);
-  --input: hsl(210 15% 90%);
-  --ring: hsl(173 58% 39%);
-  --chart-1: hsl(173 58% 39%);
-  --chart-2: hsl(210 60% 50%);
-  --chart-3: hsl(142 71% 45%);
-  --chart-4: hsl(38 92% 50%);
-  --chart-5: hsl(280 60% 50%);
-  --sidebar: hsl(210 20% 98%);
-  --sidebar-foreground: hsl(215 25% 17%);
-  --sidebar-primary: hsl(173 58% 39%);
-  --sidebar-primary-foreground: hsl(0 0% 100%);
-  --sidebar-accent: hsl(210 15% 96%);
-  --sidebar-accent-foreground: hsl(215 25% 17%);
-  --sidebar-border: hsl(210 15% 90%);
-  --sidebar-ring: hsl(173 58% 39%);
+  --popover-foreground: hsl(220 15% 20%);
+  --primary: hsl(38 92% 50%);
+  --primary-foreground: hsl(40 10% 10%);
+  --secondary: hsl(40 10% 94%);
+  --secondary-foreground: hsl(220 15% 20%);
+  --muted: hsl(40 10% 94%);
+  --muted-foreground: hsl(220 10% 50%);
+  --accent: hsl(38 70% 95%);
+  --accent-foreground: hsl(38 92% 35%);
+  --destructive: hsl(0 72% 51%);
+  --border: hsl(40 10% 88%);
+  --input: hsl(40 10% 88%);
+  --ring: hsl(38 92% 50%);
+  --chart-1: hsl(38 92% 50%);
+  --chart-2: hsl(152 60% 42%);
+  --chart-3: hsl(220 15% 60%);
+  --chart-4: hsl(38 70% 70%);
+  --chart-5: hsl(0 72% 60%);
+  --sidebar: hsl(40 10% 97%);
+  --sidebar-foreground: hsl(220 15% 20%);
+  --sidebar-primary: hsl(38 92% 50%);
+  --sidebar-primary-foreground: hsl(40 10% 10%);
+  --sidebar-accent: hsl(38 70% 95%);
+  --sidebar-accent-foreground: hsl(38 92% 35%);
+  --sidebar-border: hsl(40 10% 88%);
+  --sidebar-ring: hsl(38 92% 50%);
 }
 
 .dark {
