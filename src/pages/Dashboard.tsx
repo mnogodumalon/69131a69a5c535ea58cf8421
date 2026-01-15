@@ -1,1628 +1,1242 @@
-import { useState, useEffect, useMemo } from 'react';
-import { format, parseISO, isThisWeek, startOfDay, subDays } from 'date-fns';
-import { de } from 'date-fns/locale';
-import {
-  Package,
-  ShoppingCart,
-  Truck,
-  AlertTriangle,
-  Plus,
-  ChevronRight,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  Clock,
-  MapPin,
-  Euro,
-} from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-
+import { useCallback, useEffect, useMemo, useState } from "react"
+import type { FormEvent, ReactNode } from "react"
 import type {
-  Lieferanten,
   Bestellungen,
-  Produkte,
   Lagerbestand,
+  Lieferanten,
+  Produkte,
   Wareneingang,
-} from '@/types/app';
-import { APP_IDS } from '@/types/app';
+} from "@/types/app"
+import { APP_IDS } from "@/types/app"
 import {
   LivingAppsService,
-  extractRecordId,
   createRecordUrl,
-} from '@/services/livingAppsService';
-
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ScrollArea } from '@/components/ui/scroll-area';
+  extractRecordId,
+} from "@/services/livingAppsService"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+} from "@/components/ui/select"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Textarea } from "@/components/ui/textarea"
+import { cn } from "@/lib/utils"
+import { AlertCircle } from "lucide-react"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+  Area,
+  AreaChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts"
+import { format, isBefore, parseISO, subDays } from "date-fns"
+import { de } from "date-fns/locale"
 
-// ============ TYPES ============
-
-interface StockHealthData {
-  totalProducts: number;
-  healthyProducts: number;
-  lowStockProducts: LowStockProduct[];
-  healthPercentage: number;
+type WareneingangFormState = {
+  bestellungId: string
+  produktId: string
+  lieferantId: string
+  lieferdatum: string
+  gelieferteMenge: string
+  lagerort: string
+  qualitaetspruefung: string
+  lieferscheinnummer: string
+  erfasstVon: string
+  erfassungsdatum: string
+  abweichungen: string
+  notizen: string
 }
 
-interface LowStockProduct {
-  product: Produkte;
-  stock: Lagerbestand;
-  deficit: number;
+const initialFormState: WareneingangFormState = {
+  bestellungId: "",
+  produktId: "",
+  lieferantId: "",
+  lieferdatum: "",
+  gelieferteMenge: "",
+  lagerort: "",
+  qualitaetspruefung: "",
+  lieferscheinnummer: "",
+  erfasstVon: "",
+  erfassungsdatum: "",
+  abweichungen: "",
+  notizen: "",
 }
 
-interface EnrichedOrder extends Bestellungen {
-  supplierName?: string;
-  productName?: string;
+const openStatusKeys = [
+  "entwurf",
+  "bestellt",
+  "bestaetigt",
+  "teilweise_geliefert",
+] as const
+
+const lagerortOptions = [
+  "regal_a1",
+  "regal_a2",
+  "regal_b1",
+  "regal_b2",
+  "hochregal_1",
+  "kuehllager",
+  "aussenlager",
+  "retoure",
+] as const
+
+const qualitaetOptions = [
+  "bestanden",
+  "mit_maengeln",
+  "nicht_bestanden",
+  "nicht_geprueft",
+] as const
+
+const cardClassName =
+  "border-border/70 shadow-sm transition-shadow transition-colors hover:shadow-md hover:border-accent/40"
+
+const numberFormatter = new Intl.NumberFormat("de-DE")
+
+function formatNumber(value?: number | null) {
+  if (value == null || Number.isNaN(value)) return "-"
+  return numberFormatter.format(value)
 }
 
-interface EnrichedWareneingang extends Wareneingang {
-  productName?: string;
-  productUnit?: string;
+function formatKeyLabel(value?: string | null) {
+  if (!value) return "-"
+  return value
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ")
 }
 
-interface ChartDataPoint {
-  date: string;
-  label: string;
-  count: number;
-  value: number;
+function formatDateLabel(value?: string | null, pattern = "dd.MM.yyyy") {
+  if (!value) return "-"
+  const parsed = parseISO(value)
+  if (Number.isNaN(parsed.getTime())) return "-"
+  return format(parsed, pattern, { locale: de })
 }
 
-// ============ HELPER FUNCTIONS ============
-
-function formatCurrency(value: number | null | undefined): string {
-  if (value == null) return '-';
-  return new Intl.NumberFormat('de-DE', {
-    style: 'currency',
-    currency: 'EUR',
-  }).format(value);
+function getDisplayDate(value?: string | null) {
+  if (!value) return null
+  return value.includes("T") ? value.split("T")[0] : value
 }
 
-function formatDate(dateStr: string | null | undefined): string {
-  if (!dateStr) return '-';
-  try {
-    return format(parseISO(dateStr.split('T')[0]), 'dd.MM.yyyy', { locale: de });
-  } catch {
-    return dateStr;
-  }
-}
-
-function formatDateShort(dateStr: string | null | undefined): string {
-  if (!dateStr) return '-';
-  try {
-    return format(parseISO(dateStr.split('T')[0]), 'dd. MMM', { locale: de });
-  } catch {
-    return dateStr;
-  }
-}
-
-const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-  entwurf: { label: 'Entwurf', variant: 'secondary' },
-  bestellt: { label: 'Bestellt', variant: 'default' },
-  bestaetigt: { label: 'Bestätigt', variant: 'default' },
-  teilweise_geliefert: { label: 'Teilweise', variant: 'outline' },
-  geliefert: { label: 'Geliefert', variant: 'secondary' },
-  storniert: { label: 'Storniert', variant: 'destructive' },
-};
-
-const QUALITY_CONFIG: Record<string, { label: string; icon: typeof CheckCircle; color: string }> = {
-  bestanden: { label: 'Bestanden', icon: CheckCircle, color: 'text-green-600' },
-  mit_maengeln: { label: 'Mängel', icon: AlertCircle, color: 'text-amber-500' },
-  nicht_bestanden: { label: 'Abgelehnt', icon: XCircle, color: 'text-red-500' },
-  nicht_geprueft: { label: 'Offen', icon: Clock, color: 'text-muted-foreground' },
-};
-
-const LAGERORT_LABELS: Record<string, string> = {
-  regal_a1: 'Regal A1',
-  regal_a2: 'Regal A2',
-  regal_b1: 'Regal B1',
-  regal_b2: 'Regal B2',
-  hochregal_1: 'Hochregal 1',
-  kuehllager: 'Kühllager',
-  aussenlager: 'Außenlager',
-  retoure: 'Retoure',
-};
-
-const EINHEIT_LABELS: Record<string, string> = {
-  stueck: 'Stück',
-  kg: 'kg',
-  g: 'g',
-  liter: 'Liter',
-  meter: 'Meter',
-  karton: 'Karton',
-  palette: 'Palette',
-};
-
-// ============ LOADING STATE ============
-
-function LoadingState() {
+function DashboardSkeleton() {
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6 animate-in fade-in duration-500">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header skeleton */}
-        <div className="flex justify-between items-center">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-5 w-32" />
+    <div className="min-h-screen">
+      <div className="mx-auto max-w-7xl px-4 py-6 md:px-8 md:py-10">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-7 w-44" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+          <Skeleton className="h-11 w-52" />
         </div>
-
-        {/* Desktop layout */}
-        <div className="hidden md:grid md:grid-cols-[65%_35%] gap-5">
-          <div className="space-y-5">
-            <Skeleton className="h-64 rounded-xl" />
-            <Skeleton className="h-80 rounded-xl" />
+        <div className="mt-6 grid gap-6 md:grid-cols-12">
+          <div className="md:col-span-8 flex flex-col gap-6">
+            <Skeleton className="h-[260px] w-full" />
+            <div className="grid gap-4 md:grid-cols-2">
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-24 w-full" />
+            </div>
+            <Skeleton className="h-[280px] w-full" />
+            <Skeleton className="h-[280px] w-full" />
           </div>
-          <div className="space-y-5">
-            <Skeleton className="h-24 rounded-xl" />
-            <Skeleton className="h-24 rounded-xl" />
-            <Skeleton className="h-24 rounded-xl" />
-            <Skeleton className="h-64 rounded-xl" />
+          <div className="md:col-span-4 flex flex-col gap-6">
+            <Skeleton className="h-[360px] w-full" />
+            <Skeleton className="h-[260px] w-full" />
           </div>
-        </div>
-
-        {/* Mobile layout */}
-        <div className="md:hidden space-y-4">
-          <Skeleton className="h-64 rounded-xl" />
-          <div className="flex gap-3 overflow-hidden">
-            <Skeleton className="h-16 w-32 flex-shrink-0 rounded-full" />
-            <Skeleton className="h-16 w-32 flex-shrink-0 rounded-full" />
-            <Skeleton className="h-16 w-32 flex-shrink-0 rounded-full" />
-          </div>
-          <Skeleton className="h-48 rounded-xl" />
         </div>
       </div>
     </div>
-  );
+  )
 }
-
-// ============ ERROR STATE ============
-
-function ErrorState({ error, onRetry }: { error: Error; onRetry: () => void }) {
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="max-w-md w-full">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-destructive">
-            <AlertTriangle className="h-5 w-5" />
-            Fehler beim Laden
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-muted-foreground">{error.message}</p>
-          <Button onClick={onRetry} className="w-full">
-            Erneut versuchen
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-// ============ STOCK HEALTH GAUGE ============
-
-function StockHealthGauge({
-  healthData,
-  onClick,
-}: {
-  healthData: StockHealthData;
-  onClick: () => void;
-}) {
-  const [animatedPercentage, setAnimatedPercentage] = useState(0);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setAnimatedPercentage(healthData.healthPercentage);
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [healthData.healthPercentage]);
-
-  const circumference = 2 * Math.PI * 85;
-  const strokeDashoffset = circumference - (animatedPercentage / 100) * circumference;
-
-  const lowStockCount = healthData.lowStockProducts.length;
-  const isHealthy = lowStockCount === 0;
-
-  return (
-    <Card
-      className="cursor-pointer hover:shadow-lg transition-all duration-300 group"
-      onClick={onClick}
-    >
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
-          Lagergesundheit
-          <ChevronRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col items-center py-6 md:py-8">
-        {/* Gauge Ring */}
-        <div className="relative w-[180px] h-[180px] md:w-[200px] md:h-[200px]">
-          <svg className="w-full h-full -rotate-90" viewBox="0 0 200 200">
-            {/* Background track */}
-            <circle
-              cx="100"
-              cy="100"
-              r="85"
-              fill="none"
-              stroke="hsl(40 10% 90%)"
-              strokeWidth="10"
-            />
-            {/* Progress ring */}
-            <circle
-              cx="100"
-              cy="100"
-              r="85"
-              fill="none"
-              stroke={isHealthy ? 'hsl(152 60% 42%)' : 'hsl(38 92% 50%)'}
-              strokeWidth="10"
-              strokeLinecap="round"
-              strokeDasharray={circumference}
-              strokeDashoffset={strokeDashoffset}
-              className="transition-all duration-1000 ease-out"
-              style={{
-                filter: isHealthy
-                  ? 'drop-shadow(0 0 8px hsl(152 60% 42% / 0.4))'
-                  : 'drop-shadow(0 0 8px hsl(38 92% 50% / 0.4))',
-              }}
-            />
-          </svg>
-          {/* Center content */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span
-              className="text-5xl md:text-6xl font-bold tabular-nums"
-              style={{ color: isHealthy ? 'hsl(152 60% 42%)' : 'hsl(38 92% 50%)' }}
-            >
-              {lowStockCount}
-            </span>
-            <span className="text-xs text-muted-foreground mt-1">
-              {lowStockCount === 1 ? 'Produkt' : 'Produkte'}
-            </span>
-          </div>
-        </div>
-        {/* Label */}
-        <p className="text-center mt-4 text-sm text-muted-foreground">
-          {isHealthy ? (
-            <span className="text-green-600 font-medium">Alle Bestände optimal</span>
-          ) : (
-            <>unter Mindestbestand</>
-          )}
-        </p>
-        <p className="text-xs text-muted-foreground mt-1">
-          {healthData.healthyProducts} von {healthData.totalProducts} Produkten gesund
-        </p>
-      </CardContent>
-    </Card>
-  );
-}
-
-// ============ QUICK STATS ============
-
-function QuickStatPill({
-  icon: Icon,
-  value,
-  label,
-  onClick,
-}: {
-  icon: typeof Package;
-  value: number | string;
-  label: string;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex items-center gap-3 px-4 py-3 bg-card rounded-full border border-border hover:border-primary/30 hover:shadow-sm transition-all flex-shrink-0"
-    >
-      <Icon className="h-4 w-4 text-primary" />
-      <span className="font-semibold tabular-nums">{value}</span>
-      <span className="text-xs text-muted-foreground whitespace-nowrap">{label}</span>
-    </button>
-  );
-}
-
-function QuickStatsStrip({
-  openOrdersCount,
-  deliveriesTodayCount,
-  totalProducts,
-  totalLocations,
-  onOpenOrdersClick,
-}: {
-  openOrdersCount: number;
-  deliveriesTodayCount: number;
-  totalProducts: number;
-  totalLocations: number;
-  onOpenOrdersClick: () => void;
-}) {
-  return (
-    <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 md:hidden scrollbar-hide">
-      <QuickStatPill
-        icon={ShoppingCart}
-        value={openOrdersCount}
-        label="Offene Bestellungen"
-        onClick={onOpenOrdersClick}
-      />
-      <QuickStatPill
-        icon={Truck}
-        value={deliveriesTodayCount}
-        label="Lieferungen heute"
-      />
-      <QuickStatPill
-        icon={Package}
-        value={totalProducts}
-        label="Produkte"
-      />
-      <QuickStatPill
-        icon={MapPin}
-        value={totalLocations}
-        label="Lagerorte"
-      />
-    </div>
-  );
-}
-
-// ============ DESKTOP STAT CARDS ============
 
 function StatCard({
-  icon: Icon,
   title,
   value,
-  subtitle,
-  onClick,
+  className,
+  children,
 }: {
-  icon: typeof Package;
-  title: string;
-  value: string | number;
-  subtitle?: string;
-  onClick?: () => void;
+  title: string
+  value: string
+  className?: string
+  children?: ReactNode
 }) {
   return (
-    <Card
-      className={`${onClick ? 'cursor-pointer hover:shadow-md' : ''} transition-all`}
-      onClick={onClick}
-    >
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-xs text-muted-foreground mb-1">{title}</p>
-            <p className="text-2xl font-bold tabular-nums">{value}</p>
-            {subtitle && (
-              <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
-            )}
-          </div>
-          <div className="p-2 bg-accent rounded-lg">
-            <Icon className="h-4 w-4 text-accent-foreground" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-// ============ ORDERS TABLE ============
-
-function OrdersTable({
-  orders,
-  onOrderClick,
-}: {
-  orders: EnrichedOrder[];
-  onOrderClick: (order: EnrichedOrder) => void;
-}) {
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base font-semibold flex items-center gap-2">
-          <ShoppingCart className="h-4 w-4" />
-          Offene Bestellungen
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[100px]">Bestellnr.</TableHead>
-              <TableHead>Lieferant</TableHead>
-              <TableHead className="hidden lg:table-cell">Produkt</TableHead>
-              <TableHead>Lieferdatum</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Betrag</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {orders.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                  Keine offenen Bestellungen
-                </TableCell>
-              </TableRow>
-            ) : (
-              orders.map((order) => {
-                const statusConfig = STATUS_CONFIG[order.fields.status || 'entwurf'];
-                return (
-                  <TableRow
-                    key={order.record_id}
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => onOrderClick(order)}
-                  >
-                    <TableCell className="font-medium">
-                      {order.fields.bestellnummer || '-'}
-                    </TableCell>
-                    <TableCell>{order.supplierName || '-'}</TableCell>
-                    <TableCell className="hidden lg:table-cell">
-                      {order.productName || '-'}
-                    </TableCell>
-                    <TableCell>
-                      {formatDateShort(order.fields.erwartetes_lieferdatum)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={statusConfig.variant} className="text-xs">
-                        {statusConfig.label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {formatCurrency(order.fields.gesamtpreis)}
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  );
-}
-
-// ============ MOBILE ORDERS LIST ============
-
-function OrdersList({
-  orders,
-  onOrderClick,
-  onShowAll,
-}: {
-  orders: EnrichedOrder[];
-  onOrderClick: (order: EnrichedOrder) => void;
-  onShowAll: () => void;
-}) {
-  return (
-    <Card>
+    <Card className={cn(cardClassName, className)}>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-semibold flex items-center justify-between">
-          <span className="flex items-center gap-2">
-            <ShoppingCart className="h-4 w-4" />
-            Offene Bestellungen
-          </span>
-          <Button variant="ghost" size="sm" onClick={onShowAll} className="text-xs">
-            Alle anzeigen
-          </Button>
+        <CardTitle className="text-sm font-medium text-muted-foreground">
+          {title}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2">
-        {orders.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">
-            Keine offenen Bestellungen
-          </p>
-        ) : (
-          orders.slice(0, 5).map((order) => {
-            const statusConfig = STATUS_CONFIG[order.fields.status || 'entwurf'];
-            return (
-              <div
-                key={order.record_id}
-                className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                onClick={() => onOrderClick(order)}
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm truncate">
-                      {order.fields.bestellnummer}
-                    </span>
-                    <span className="text-xs text-muted-foreground truncate">
-                      {order.supplierName}
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Erwartet: {formatDateShort(order.fields.erwartetes_lieferdatum)}
-                  </p>
-                </div>
-                <Badge variant={statusConfig.variant} className="text-xs ml-2 flex-shrink-0">
-                  {statusConfig.label}
-                </Badge>
-              </div>
-            );
-          })
-        )}
+      <CardContent className="flex flex-col gap-2">
+        <div className="text-2xl font-semibold">{value}</div>
+        {children}
       </CardContent>
     </Card>
-  );
+  )
 }
-
-// ============ WARENEINGANG FEED ============
-
-function WareneingangFeed({
-  items,
-  onItemClick,
-}: {
-  items: EnrichedWareneingang[];
-  onItemClick: (item: EnrichedWareneingang) => void;
-}) {
-  return (
-    <Card className="h-full">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-semibold flex items-center gap-2">
-          <Truck className="h-4 w-4" />
-          Letzte Wareneingänge
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[280px] md:h-[320px]">
-          <div className="space-y-3 pr-4">
-            {items.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                Keine Wareneingänge
-              </p>
-            ) : (
-              items.map((item) => {
-                const qualityConfig = QUALITY_CONFIG[item.fields.qualitaetspruefung || 'nicht_geprueft'];
-                const QualityIcon = qualityConfig.icon;
-                return (
-                  <div
-                    key={item.record_id}
-                    className="p-3 rounded-lg border border-border hover:border-primary/30 cursor-pointer transition-colors"
-                    onClick={() => onItemClick(item)}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-sm truncate">
-                          {item.productName || 'Unbekanntes Produkt'}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {item.fields.gelieferte_menge} {item.productUnit || 'Stück'}
-                          {item.fields.lagerort && ` · ${LAGERORT_LABELS[item.fields.lagerort] || item.fields.lagerort}`}
-                        </p>
-                      </div>
-                      <QualityIcon className={`h-4 w-4 flex-shrink-0 ${qualityConfig.color}`} />
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {formatDate(item.fields.lieferdatum)}
-                    </p>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </ScrollArea>
-      </CardContent>
-    </Card>
-  );
-}
-
-// ============ ORDER TREND CHART ============
-
-function OrderTrendChart({ data }: { data: ChartDataPoint[] }) {
-  return (
-    <Card className="hidden md:block">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-semibold">
-          Bestellungen (letzte 30 Tage)
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="h-[200px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data}>
-              <defs>
-                <linearGradient id="orderGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(38 92% 50%)" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="hsl(38 92% 50%)" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <XAxis
-                dataKey="label"
-                tick={{ fontSize: 11 }}
-                stroke="hsl(220 10% 50%)"
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                tick={{ fontSize: 11 }}
-                stroke="hsl(220 10% 50%)"
-                tickLine={false}
-                axisLine={false}
-                allowDecimals={false}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'hsl(0 0% 100%)',
-                  border: '1px solid hsl(40 10% 88%)',
-                  borderRadius: '8px',
-                  fontSize: '12px',
-                }}
-                formatter={(value: number) => [`${value} Bestellungen`, '']}
-                labelFormatter={(label) => `Datum: ${label}`}
-              />
-              <Area
-                type="monotone"
-                dataKey="count"
-                stroke="hsl(38 92% 50%)"
-                strokeWidth={2}
-                fill="url(#orderGradient)"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-// ============ LOW STOCK SHEET ============
-
-function LowStockSheet({
-  open,
-  onOpenChange,
-  lowStockProducts,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  lowStockProducts: LowStockProduct[];
-}) {
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[85vh] md:h-[70vh]">
-        <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-amber-500" />
-            Produkte unter Mindestbestand
-          </SheetTitle>
-        </SheetHeader>
-        <ScrollArea className="h-full mt-4 pb-8">
-          <div className="space-y-3 pr-4">
-            {lowStockProducts.length === 0 ? (
-              <div className="text-center py-8">
-                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-3" />
-                <p className="font-medium">Alle Bestände sind optimal!</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Keine Produkte unter Mindestbestand
-                </p>
-              </div>
-            ) : (
-              lowStockProducts.map(({ product, stock, deficit }) => (
-                <Card key={product.record_id} className="border-amber-200">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h4 className="font-medium">{product.fields.produktname}</h4>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Art.-Nr.: {product.fields.artikelnummer || '-'}
-                        </p>
-                      </div>
-                      <Badge variant="outline" className="border-amber-500 text-amber-700">
-                        -{deficit} {EINHEIT_LABELS[product.fields.einheit || 'stueck']}
-                      </Badge>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4 mt-4 text-sm">
-                      <div>
-                        <p className="text-muted-foreground text-xs">Aktuell</p>
-                        <p className="font-medium text-red-600">
-                          {stock.fields.menge ?? 0}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground text-xs">Minimum</p>
-                        <p className="font-medium">
-                          {product.fields.mindestbestand ?? 0}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground text-xs">Lagerort</p>
-                        <p className="font-medium">
-                          {LAGERORT_LABELS[stock.fields.lagerort || ''] || '-'}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
-        </ScrollArea>
-      </SheetContent>
-    </Sheet>
-  );
-}
-
-// ============ ORDER DETAIL DIALOG ============
-
-function OrderDetailDialog({
-  order,
-  open,
-  onOpenChange,
-}: {
-  order: EnrichedOrder | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  if (!order) return null;
-
-  const statusConfig = STATUS_CONFIG[order.fields.status || 'entwurf'];
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            Bestellung {order.fields.bestellnummer}
-            <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
-          </DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4 mt-4">
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="text-muted-foreground text-xs">Lieferant</p>
-              <p className="font-medium">{order.supplierName || '-'}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground text-xs">Produkt</p>
-              <p className="font-medium">{order.productName || '-'}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground text-xs">Bestelldatum</p>
-              <p className="font-medium">{formatDate(order.fields.bestelldatum)}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground text-xs">Erw. Lieferdatum</p>
-              <p className="font-medium">{formatDate(order.fields.erwartetes_lieferdatum)}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground text-xs">Menge</p>
-              <p className="font-medium">{order.fields.bestellmenge ?? '-'}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground text-xs">Preis/Einheit</p>
-              <p className="font-medium">{formatCurrency(order.fields.preis_pro_einheit)}</p>
-            </div>
-          </div>
-          <div className="pt-4 border-t">
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Gesamtpreis</span>
-              <span className="text-xl font-bold">{formatCurrency(order.fields.gesamtpreis)}</span>
-            </div>
-          </div>
-          {order.fields.notizen && (
-            <div className="pt-4 border-t">
-              <p className="text-muted-foreground text-xs mb-1">Notizen</p>
-              <p className="text-sm">{order.fields.notizen}</p>
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// ============ WARENEINGANG DETAIL DIALOG ============
-
-function WareneingangDetailDialog({
-  item,
-  open,
-  onOpenChange,
-}: {
-  item: EnrichedWareneingang | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  if (!item) return null;
-
-  const qualityConfig = QUALITY_CONFIG[item.fields.qualitaetspruefung || 'nicht_geprueft'];
-  const QualityIcon = qualityConfig.icon;
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Wareneingang Details</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4 mt-4">
-          <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-            <div>
-              <p className="font-medium">{item.productName || 'Produkt'}</p>
-              <p className="text-sm text-muted-foreground">
-                {item.fields.gelieferte_menge} {item.productUnit || 'Stück'}
-              </p>
-            </div>
-            <div className={`flex items-center gap-1.5 ${qualityConfig.color}`}>
-              <QualityIcon className="h-4 w-4" />
-              <span className="text-sm font-medium">{qualityConfig.label}</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="text-muted-foreground text-xs">Lieferdatum</p>
-              <p className="font-medium">{formatDate(item.fields.lieferdatum)}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground text-xs">Lagerort</p>
-              <p className="font-medium">
-                {LAGERORT_LABELS[item.fields.lagerort || ''] || '-'}
-              </p>
-            </div>
-            <div>
-              <p className="text-muted-foreground text-xs">Lieferschein-Nr.</p>
-              <p className="font-medium">{item.fields.lieferscheinnummer || '-'}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground text-xs">Erfasst von</p>
-              <p className="font-medium">{item.fields.erfasst_von || '-'}</p>
-            </div>
-          </div>
-
-          {item.fields.abweichungen && (
-            <div className="pt-4 border-t">
-              <p className="text-muted-foreground text-xs mb-1">Abweichungen</p>
-              <p className="text-sm">{item.fields.abweichungen}</p>
-            </div>
-          )}
-
-          {item.fields.notizen && (
-            <div className="pt-4 border-t">
-              <p className="text-muted-foreground text-xs mb-1">Notizen</p>
-              <p className="text-sm">{item.fields.notizen}</p>
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// ============ ALL ORDERS DIALOG ============
-
-function AllOrdersDialog({
-  orders,
-  open,
-  onOpenChange,
-  onOrderClick,
-}: {
-  orders: EnrichedOrder[];
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onOrderClick: (order: EnrichedOrder) => void;
-}) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh]">
-        <DialogHeader>
-          <DialogTitle>Alle offenen Bestellungen</DialogTitle>
-        </DialogHeader>
-        <ScrollArea className="h-[60vh] mt-4">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Bestellnr.</TableHead>
-                <TableHead>Lieferant</TableHead>
-                <TableHead>Lieferdatum</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Betrag</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {orders.map((order) => {
-                const statusConfig = STATUS_CONFIG[order.fields.status || 'entwurf'];
-                return (
-                  <TableRow
-                    key={order.record_id}
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => {
-                      onOpenChange(false);
-                      onOrderClick(order);
-                    }}
-                  >
-                    <TableCell className="font-medium">
-                      {order.fields.bestellnummer || '-'}
-                    </TableCell>
-                    <TableCell>{order.supplierName || '-'}</TableCell>
-                    <TableCell>
-                      {formatDate(order.fields.erwartetes_lieferdatum)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={statusConfig.variant} className="text-xs">
-                        {statusConfig.label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {formatCurrency(order.fields.gesamtpreis)}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </ScrollArea>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// ============ ADD WARENEINGANG FORM ============
-
-function AddWareneingangForm({
-  open,
-  onOpenChange,
-  openOrders,
-  products,
-  suppliers,
-  onSuccess,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  openOrders: EnrichedOrder[];
-  products: Produkte[];
-  suppliers: Lieferanten[];
-  onSuccess: () => void;
-}) {
-  const [selectedOrder, setSelectedOrder] = useState<string>('');
-  const [selectedProduct, setSelectedProduct] = useState<string>('');
-  const [selectedSupplier, setSelectedSupplier] = useState<string>('');
-  const [lieferdatum, setLieferdatum] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [menge, setMenge] = useState('');
-  const [lagerort, setLagerort] = useState<string>('');
-  const [qualitaet, setQualitaet] = useState<string>('nicht_geprueft');
-  const [lieferschein, setLieferschein] = useState('');
-  const [erfasstVon, setErfasstVon] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-
-  // Auto-fill from selected order
-  useEffect(() => {
-    if (selectedOrder) {
-      const order = openOrders.find((o) => o.record_id === selectedOrder);
-      if (order) {
-        const productId = extractRecordId(order.fields.produkt);
-        const supplierId = extractRecordId(order.fields.lieferant);
-        if (productId) setSelectedProduct(productId);
-        if (supplierId) setSelectedSupplier(supplierId);
-      }
-    }
-  }, [selectedOrder, openOrders]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedProduct || !menge || !lagerort) return;
-
-    setSubmitting(true);
-    try {
-      const now = new Date();
-      const erfassungsdatum = `${format(now, 'yyyy-MM-dd')}T${format(now, 'HH:mm')}`;
-
-      await LivingAppsService.createWareneingangEntry({
-        bestellung: selectedOrder
-          ? createRecordUrl(APP_IDS.BESTELLUNGEN, selectedOrder)
-          : undefined,
-        produkt: createRecordUrl(APP_IDS.PRODUKTE, selectedProduct),
-        lieferant: selectedSupplier
-          ? createRecordUrl(APP_IDS.LIEFERANTEN, selectedSupplier)
-          : undefined,
-        lieferdatum,
-        gelieferte_menge: parseFloat(menge),
-        lagerort: lagerort as Wareneingang['fields']['lagerort'],
-        qualitaetspruefung: qualitaet as Wareneingang['fields']['qualitaetspruefung'],
-        lieferscheinnummer: lieferschein || undefined,
-        erfasst_von: erfasstVon || undefined,
-        erfassungsdatum,
-      });
-
-      // Reset form
-      setSelectedOrder('');
-      setSelectedProduct('');
-      setSelectedSupplier('');
-      setLieferdatum(format(new Date(), 'yyyy-MM-dd'));
-      setMenge('');
-      setLagerort('');
-      setQualitaet('nicht_geprueft');
-      setLieferschein('');
-      setErfasstVon('');
-
-      onOpenChange(false);
-      onSuccess();
-    } catch (error) {
-      console.error('Failed to create Wareneingang:', error);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Plus className="h-5 w-5" />
-            Wareneingang erfassen
-          </DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          {/* Bestellung (optional) */}
-          <div className="space-y-2">
-            <Label htmlFor="order">Bestellung (optional)</Label>
-            <Select value={selectedOrder} onValueChange={setSelectedOrder}>
-              <SelectTrigger>
-                <SelectValue placeholder="Bestellung auswählen..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Keine Bestellung</SelectItem>
-                {openOrders.map((order) => (
-                  <SelectItem key={order.record_id} value={order.record_id}>
-                    {order.fields.bestellnummer} - {order.supplierName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Produkt */}
-          <div className="space-y-2">
-            <Label htmlFor="product">Produkt *</Label>
-            <Select value={selectedProduct} onValueChange={setSelectedProduct}>
-              <SelectTrigger>
-                <SelectValue placeholder="Produkt auswählen..." />
-              </SelectTrigger>
-              <SelectContent>
-                {products.map((product) => (
-                  <SelectItem key={product.record_id} value={product.record_id}>
-                    {product.fields.produktname} ({product.fields.artikelnummer})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Lieferant */}
-          <div className="space-y-2">
-            <Label htmlFor="supplier">Lieferant</Label>
-            <Select value={selectedSupplier} onValueChange={setSelectedSupplier}>
-              <SelectTrigger>
-                <SelectValue placeholder="Lieferant auswählen..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Kein Lieferant</SelectItem>
-                {suppliers.map((supplier) => (
-                  <SelectItem key={supplier.record_id} value={supplier.record_id}>
-                    {supplier.fields.firmenname}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            {/* Lieferdatum */}
-            <div className="space-y-2">
-              <Label htmlFor="date">Lieferdatum *</Label>
-              <Input
-                id="date"
-                type="date"
-                value={lieferdatum}
-                onChange={(e) => setLieferdatum(e.target.value)}
-                required
-              />
-            </div>
-
-            {/* Menge */}
-            <div className="space-y-2">
-              <Label htmlFor="quantity">Menge *</Label>
-              <Input
-                id="quantity"
-                type="number"
-                min="0"
-                step="0.01"
-                value={menge}
-                onChange={(e) => setMenge(e.target.value)}
-                placeholder="0"
-                required
-              />
-            </div>
-          </div>
-
-          {/* Lagerort */}
-          <div className="space-y-2">
-            <Label htmlFor="location">Lagerort *</Label>
-            <Select value={lagerort} onValueChange={setLagerort}>
-              <SelectTrigger>
-                <SelectValue placeholder="Lagerort auswählen..." />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(LAGERORT_LABELS).map(([key, label]) => (
-                  <SelectItem key={key} value={key}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Qualitätsprüfung */}
-          <div className="space-y-2">
-            <Label htmlFor="quality">Qualitätsprüfung</Label>
-            <Select value={qualitaet} onValueChange={setQualitaet}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="bestanden">Bestanden</SelectItem>
-                <SelectItem value="mit_maengeln">Mit Mängeln</SelectItem>
-                <SelectItem value="nicht_bestanden">Nicht bestanden</SelectItem>
-                <SelectItem value="nicht_geprueft">Nicht geprüft</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            {/* Lieferscheinnummer */}
-            <div className="space-y-2">
-              <Label htmlFor="delivery-note">Lieferschein-Nr.</Label>
-              <Input
-                id="delivery-note"
-                value={lieferschein}
-                onChange={(e) => setLieferschein(e.target.value)}
-                placeholder="LS-12345"
-              />
-            </div>
-
-            {/* Erfasst von */}
-            <div className="space-y-2">
-              <Label htmlFor="recorded-by">Erfasst von</Label>
-              <Input
-                id="recorded-by"
-                value={erfasstVon}
-                onChange={(e) => setErfasstVon(e.target.value)}
-                placeholder="Name"
-              />
-            </div>
-          </div>
-
-          <Button
-            type="submit"
-            className="w-full mt-6"
-            disabled={submitting || !selectedProduct || !menge || !lagerort}
-          >
-            {submitting ? 'Wird gespeichert...' : 'Wareneingang speichern'}
-          </Button>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// ============ MAIN DASHBOARD ============
 
 export default function Dashboard() {
-  // Data state
-  const [lieferanten, setLieferanten] = useState<Lieferanten[]>([]);
-  const [bestellungen, setBestellungen] = useState<Bestellungen[]>([]);
-  const [produkte, setProdukte] = useState<Produkte[]>([]);
-  const [lagerbestand, setLagerbestand] = useState<Lagerbestand[]>([]);
-  const [wareneingang, setWareneingang] = useState<Wareneingang[]>([]);
+  const [lieferanten, setLieferanten] = useState<Lieferanten[]>([])
+  const [bestellungen, setBestellungen] = useState<Bestellungen[]>([])
+  const [produkte, setProdukte] = useState<Produkte[]>([])
+  const [lagerbestand, setLagerbestand] = useState<Lagerbestand[]>([])
+  const [wareneingang, setWareneingang] = useState<Wareneingang[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [actionOpen, setActionOpen] = useState(false)
+  const [formState, setFormState] = useState<WareneingangFormState>(
+    initialFormState
+  )
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
-  // UI state
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  // Dialog/Sheet state
-  const [lowStockSheetOpen, setLowStockSheetOpen] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<EnrichedOrder | null>(null);
-  const [selectedWareneingang, setSelectedWareneingang] = useState<EnrichedWareneingang | null>(null);
-  const [allOrdersDialogOpen, setAllOrdersDialogOpen] = useState(false);
-  const [addWareneingangOpen, setAddWareneingangOpen] = useState(false);
-
-  // Fetch all data
-  const fetchData = async () => {
+  const loadData = useCallback(async () => {
     try {
-      setLoading(true);
-      setError(null);
-      const [l, b, p, lb, we] = await Promise.all([
+      setLoading(true)
+      setError(null)
+      const [
+        lieferantenData,
+        bestellungenData,
+        produkteData,
+        lagerbestandData,
+        wareneingangData,
+      ] = await Promise.all([
         LivingAppsService.getLieferanten(),
         LivingAppsService.getBestellungen(),
         LivingAppsService.getProdukte(),
         LivingAppsService.getLagerbestand(),
         LivingAppsService.getWareneingang(),
-      ]);
-      setLieferanten(l);
-      setBestellungen(b);
-      setProdukte(p);
-      setLagerbestand(lb);
-      setWareneingang(we);
+      ])
+      setLieferanten(lieferantenData)
+      setBestellungen(bestellungenData)
+      setProdukte(produkteData)
+      setLagerbestand(lagerbestandData)
+      setWareneingang(wareneingangData)
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unbekannter Fehler'));
+      setError(err instanceof Error ? err.message : "Unbekannter Fehler")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }, [])
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    loadData()
+  }, [loadData])
 
-  // Create lookup maps
-  const supplierMap = useMemo(() => {
-    const map = new Map<string, Lieferanten>();
-    lieferanten.forEach((s) => map.set(s.record_id, s));
-    return map;
-  }, [lieferanten]);
+  const lieferantenById = useMemo(() => {
+    return new Map(lieferanten.map((item) => [item.record_id, item]))
+  }, [lieferanten])
 
-  const productMap = useMemo(() => {
-    const map = new Map<string, Produkte>();
-    produkte.forEach((p) => map.set(p.record_id, p));
-    return map;
-  }, [produkte]);
+  const produkteById = useMemo(() => {
+    return new Map(produkte.map((item) => [item.record_id, item]))
+  }, [produkte])
 
-  // Calculate stock health
-  const stockHealthData = useMemo<StockHealthData>(() => {
-    const lowStockProducts: LowStockProduct[] = [];
-
-    lagerbestand.forEach((stock) => {
-      const productId = extractRecordId(stock.fields.produkt);
-      if (!productId) return;
-
-      const product = productMap.get(productId);
-      if (!product) return;
-
-      const currentStock = stock.fields.menge ?? 0;
-      const minStock = product.fields.mindestbestand ?? 0;
-
-      if (currentStock < minStock) {
-        lowStockProducts.push({
-          product,
-          stock,
-          deficit: minStock - currentStock,
-        });
+  const stockByProductId = useMemo(() => {
+    const map = new Map<string, { available: number; locations: Set<string> }>()
+    lagerbestand.forEach((entry) => {
+      const productId = extractRecordId(entry.fields.produkt)
+      if (!productId) return
+      const current = map.get(productId) ?? {
+        available: 0,
+        locations: new Set<string>(),
       }
-    });
+      current.available += entry.fields.verfuegbar ?? 0
+      if (entry.fields.lagerort) {
+        current.locations.add(entry.fields.lagerort)
+      }
+      map.set(productId, current)
+    })
+    return map
+  }, [lagerbestand])
 
-    // Sort by deficit (highest first)
-    lowStockProducts.sort((a, b) => b.deficit - a.deficit);
+  const totalAvailable = useMemo(() => {
+    return lagerbestand.reduce(
+      (sum, entry) => sum + (entry.fields.verfuegbar ?? 0),
+      0
+    )
+  }, [lagerbestand])
 
-    const totalProducts = produkte.filter(p => p.fields.aktiv === 'aktiv').length || produkte.length;
-    const healthyProducts = totalProducts - lowStockProducts.length;
-    const healthPercentage = totalProducts > 0 ? (healthyProducts / totalProducts) * 100 : 100;
+  const activeProducts = useMemo(() => {
+    return produkte.filter((item) => item.fields.aktiv === "aktiv").length
+  }, [produkte])
 
-    return {
-      totalProducts,
-      healthyProducts,
-      lowStockProducts,
-      healthPercentage,
-    };
-  }, [lagerbestand, productMap, produkte]);
+  const supplierAverage = useMemo(() => {
+    const values = lieferanten
+      .map((item) => item.fields.lieferzeit)
+      .filter((value): value is number => value != null)
+    if (values.length === 0) return null
+    return values.reduce((sum, value) => sum + value, 0) / values.length
+  }, [lieferanten])
 
-  // Enrich orders with supplier/product names
-  const enrichedOrders = useMemo<EnrichedOrder[]>(() => {
-    return bestellungen.map((order) => {
-      const supplierId = extractRecordId(order.fields.lieferant);
-      const productId = extractRecordId(order.fields.produkt);
-
-      return {
-        ...order,
-        supplierName: supplierId ? supplierMap.get(supplierId)?.fields.firmenname : undefined,
-        productName: productId ? productMap.get(productId)?.fields.produktname : undefined,
-      };
-    });
-  }, [bestellungen, supplierMap, productMap]);
-
-  // Filter open orders
   const openOrders = useMemo(() => {
-    return enrichedOrders
-      .filter((order) => {
-        const status = order.fields.status;
-        return status && !['geliefert', 'storniert'].includes(status);
-      })
-      .sort((a, b) => {
-        const dateA = a.fields.erwartetes_lieferdatum || '';
-        const dateB = b.fields.erwartetes_lieferdatum || '';
-        return dateA.localeCompare(dateB);
-      });
-  }, [enrichedOrders]);
+    const openSet = new Set<string>(openStatusKeys)
+    return bestellungen.filter((order) => {
+      const status = order.fields.status
+      return status ? openSet.has(status) : false
+    })
+  }, [bestellungen])
 
-  // Calculate open orders value
-  const openOrdersValue = useMemo(() => {
-    return openOrders.reduce((sum, order) => sum + (order.fields.gesamtpreis || 0), 0);
-  }, [openOrders]);
+  const openOrdersSorted = useMemo(() => {
+    return [...openOrders].sort((a, b) => {
+      const dateA = getDisplayDate(a.fields.erwartetes_lieferdatum) ?? "9999-12-31"
+      const dateB = getDisplayDate(b.fields.erwartetes_lieferdatum) ?? "9999-12-31"
+      return dateA.localeCompare(dateB)
+    })
+  }, [openOrders])
 
-  // Count deliveries expected this week
-  const deliveriesThisWeek = useMemo(() => {
-    return openOrders.filter((order) => {
-      if (!order.fields.erwartetes_lieferdatum) return false;
-      try {
-        return isThisWeek(parseISO(order.fields.erwartetes_lieferdatum));
-      } catch {
-        return false;
+  const openStatusCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    openOrders.forEach((order) => {
+      const status = order.fields.status
+      if (!status) return
+      counts[status] = (counts[status] ?? 0) + 1
+    })
+    return counts
+  }, [openOrders])
+
+  const stockSummary = useMemo(() => {
+    const summaries = produkte.map((product) => {
+      const stock = stockByProductId.get(product.record_id)
+      const available = stock?.available ?? 0
+      const minimum = product.fields.mindestbestand ?? 0
+      const deficit = Math.max(0, minimum - available)
+      const locations = stock?.locations ?? new Set<string>()
+      let locationLabel = "-"
+      if (locations.size > 1) {
+        locationLabel = "Mehrere Lagerorte"
+      } else if (locations.size === 1) {
+        locationLabel = formatKeyLabel(Array.from(locations)[0])
       }
-    }).length;
-  }, [openOrders]);
-
-  // Enrich Wareneingang with product names
-  const enrichedWareneingang = useMemo<EnrichedWareneingang[]>(() => {
-    return wareneingang
-      .map((we) => {
-        const productId = extractRecordId(we.fields.produkt);
-        const product = productId ? productMap.get(productId) : null;
-
-        return {
-          ...we,
-          productName: product?.fields.produktname,
-          productUnit: product?.fields.einheit
-            ? EINHEIT_LABELS[product.fields.einheit]
-            : undefined,
-        };
-      })
-      .sort((a, b) => {
-        const dateA = a.fields.erfassungsdatum || a.fields.lieferdatum || '';
-        const dateB = b.fields.erfassungsdatum || b.fields.lieferdatum || '';
-        return dateB.localeCompare(dateA);
-      })
-      .slice(0, 10);
-  }, [wareneingang, productMap]);
-
-  // Calculate chart data (orders over last 30 days)
-  const chartData = useMemo<ChartDataPoint[]>(() => {
-    const today = startOfDay(new Date());
-    const thirtyDaysAgo = subDays(today, 30);
-
-    // Initialize all days
-    const dayMap = new Map<string, { count: number; value: number }>();
-    for (let i = 0; i <= 30; i++) {
-      const date = subDays(today, 30 - i);
-      const dateStr = format(date, 'yyyy-MM-dd');
-      dayMap.set(dateStr, { count: 0, value: 0 });
+      return { product, available, minimum, deficit, locationLabel }
+    })
+    const critical = summaries.filter((item) => item.available < item.minimum)
+    critical.sort((a, b) => b.deficit - a.deficit)
+    return {
+      totalProducts: summaries.length,
+      criticalCount: critical.length,
+      criticalItems: critical.slice(0, 8),
     }
+  }, [produkte, stockByProductId])
 
-    // Count orders per day
-    bestellungen.forEach((order) => {
-      if (!order.fields.bestelldatum) return;
-      const orderDate = order.fields.bestelldatum.split('T')[0];
-      const existing = dayMap.get(orderDate);
-      if (existing) {
-        existing.count += 1;
-        existing.value += order.fields.gesamtpreis || 0;
+  const healthyPercent =
+    stockSummary.totalProducts > 0
+      ? Math.round(
+          ((stockSummary.totalProducts - stockSummary.criticalCount) /
+            stockSummary.totalProducts) *
+            100
+        )
+      : 0
+
+  const markerPosition = Math.min(98, Math.max(2, 100 - healthyPercent))
+
+  const chartData = useMemo(() => {
+    const cutoff = subDays(new Date(), 30)
+    const map = new Map<string, number>()
+    wareneingang.forEach((entry) => {
+      const rawDate =
+        getDisplayDate(entry.fields.lieferdatum) ??
+        getDisplayDate(entry.fields.erfassungsdatum)
+      if (!rawDate) return
+      const parsed = parseISO(rawDate)
+      if (Number.isNaN(parsed.getTime())) return
+      if (isBefore(parsed, cutoff)) return
+      const qty = entry.fields.gelieferte_menge ?? 0
+      map.set(rawDate, (map.get(rawDate) ?? 0) + qty)
+    })
+    return Array.from(map.entries())
+      .map(([date, value]) => ({ date, value }))
+      .sort((a, b) => a.date.localeCompare(b.date))
+  }, [wareneingang])
+
+  const chartDataMobile = useMemo(() => {
+    return chartData.slice(-14)
+  }, [chartData])
+
+  const recentReceipts = useMemo(() => {
+    return [...wareneingang]
+      .sort((a, b) => {
+        const dateA =
+          getDisplayDate(a.fields.erfassungsdatum) ??
+          getDisplayDate(a.fields.lieferdatum) ??
+          a.createdat
+        const dateB =
+          getDisplayDate(b.fields.erfassungsdatum) ??
+          getDisplayDate(b.fields.lieferdatum) ??
+          b.createdat
+        return dateB.localeCompare(dateA)
+      })
+      .slice(0, 6)
+  }, [wareneingang])
+
+  const todayLabel = format(new Date(), "dd.MM.yyyy", { locale: de })
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setSubmitting(true)
+    setSubmitError(null)
+
+    try {
+      const fields: Wareneingang["fields"] = {
+        bestellung: formState.bestellungId
+          ? createRecordUrl(APP_IDS.BESTELLUNGEN, formState.bestellungId)
+          : undefined,
+        produkt: formState.produktId
+          ? createRecordUrl(APP_IDS.PRODUKTE, formState.produktId)
+          : undefined,
+        lieferant: formState.lieferantId
+          ? createRecordUrl(APP_IDS.LIEFERANTEN, formState.lieferantId)
+          : undefined,
+        lieferdatum: formState.lieferdatum || undefined,
+        gelieferte_menge: formState.gelieferteMenge
+          ? Number(formState.gelieferteMenge)
+          : undefined,
+        lagerort: (formState.lagerort || undefined) as
+          | Wareneingang["fields"]["lagerort"]
+          | undefined,
+        qualitaetspruefung: (formState.qualitaetspruefung || undefined) as
+          | Wareneingang["fields"]["qualitaetspruefung"]
+          | undefined,
+        lieferscheinnummer: formState.lieferscheinnummer || undefined,
+        erfasst_von: formState.erfasstVon || undefined,
+        erfassungsdatum: formState.erfassungsdatum || undefined,
+        abweichungen: formState.abweichungen || undefined,
+        notizen: formState.notizen || undefined,
       }
-    });
 
-    return Array.from(dayMap.entries()).map(([date, data]) => ({
-      date,
-      label: format(parseISO(date), 'dd.MM'),
-      count: data.count,
-      value: data.value,
-    }));
-  }, [bestellungen]);
+      await LivingAppsService.createWareneingangEntry(fields)
+      setFormState(initialFormState)
+      setActionOpen(false)
+      await loadData()
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Speichern fehlgeschlagen")
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
-  // Get unique storage locations count
-  const uniqueLocations = useMemo(() => {
-    const locations = new Set<string>();
-    lagerbestand.forEach((stock) => {
-      if (stock.fields.lagerort) {
-        locations.add(stock.fields.lagerort);
-      }
-    });
-    return locations.size;
-  }, [lagerbestand]);
+  const getSupplierLabel = (url?: string | null) => {
+    const id = extractRecordId(url)
+    if (!id) return "-"
+    const supplier = lieferantenById.get(id)
+    return (
+      supplier?.fields.firmenname ?? supplier?.fields.lieferantennummer ?? "-"
+    )
+  }
 
-  // Loading state
+  const getProductLabel = (url?: string | null) => {
+    const id = extractRecordId(url)
+    if (!id) return "-"
+    const product = produkteById.get(id)
+    return product?.fields.produktname ?? product?.fields.artikelnummer ?? "-"
+  }
+
   if (loading) {
-    return <LoadingState />;
+    return <DashboardSkeleton />
   }
 
-  // Error state
   if (error) {
-    return <ErrorState error={error} onRetry={fetchData} />;
+    return (
+      <div className="min-h-screen">
+        <div className="mx-auto max-w-3xl px-4 py-10">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Fehler beim Laden</AlertTitle>
+            <AlertDescription className="space-y-3">
+              <div>{error}</div>
+              <Button
+                variant="outline"
+                className="active:translate-y-[1px]"
+                onClick={loadData}
+              >
+                Erneut versuchen
+              </Button>
+            </AlertDescription>
+          </Alert>
+        </div>
+      </div>
+    )
   }
-
-  const todayFormatted = format(new Date(), "d. MMM yyyy", { locale: de });
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Main content */}
-      <div className="p-4 md:p-6 pb-24 md:pb-6 max-w-7xl mx-auto">
-        {/* Header */}
-        <header className="flex items-center justify-between mb-6">
-          <h1 className="text-xl md:text-2xl font-semibold tracking-tight">
-            Lagerverwaltung
-          </h1>
-          <span className="text-sm text-muted-foreground">{todayFormatted}</span>
-        </header>
-
-        {/* Mobile Layout */}
-        <div className="md:hidden space-y-4">
-          {/* Hero: Stock Health Gauge */}
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <StockHealthGauge
-              healthData={stockHealthData}
-              onClick={() => setLowStockSheetOpen(true)}
-            />
-          </div>
-
-          {/* Quick Stats Strip */}
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
-            <QuickStatsStrip
-              openOrdersCount={openOrders.length}
-              deliveriesTodayCount={deliveriesThisWeek}
-              totalProducts={produkte.length}
-              totalLocations={uniqueLocations}
-              onOpenOrdersClick={() => setAllOrdersDialogOpen(true)}
-            />
-          </div>
-
-          {/* Orders List */}
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150">
-            <OrdersList
-              orders={openOrders}
-              onOrderClick={setSelectedOrder}
-              onShowAll={() => setAllOrdersDialogOpen(true)}
-            />
-          </div>
-
-          {/* Wareneingang Feed */}
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200">
-            <WareneingangFeed
-              items={enrichedWareneingang}
-              onItemClick={setSelectedWareneingang}
-            />
-          </div>
-        </div>
-
-        {/* Desktop Layout: 65/35 split */}
-        <div className="hidden md:grid md:grid-cols-[65%_35%] gap-5">
-          {/* Left Column (65%) */}
-          <div className="space-y-5">
-            {/* Hero: Stock Health Gauge */}
-            <div className="animate-in fade-in slide-in-from-left-4 duration-500">
-              <StockHealthGauge
-                healthData={stockHealthData}
-                onClick={() => setLowStockSheetOpen(true)}
-              />
+    <div
+      className="min-h-screen"
+      style={{
+        backgroundImage:
+          "radial-gradient(1200px circle at 0% 0%, hsl(32 78% 54% / 0.08), transparent 60%)",
+      }}
+    >
+      <Dialog open={actionOpen} onOpenChange={setActionOpen}>
+        <div className="mx-auto max-w-7xl px-4 pb-24 pt-6 md:px-8 md:pb-10 md:pt-10">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="text-3xl font-semibold">Lager Cockpit</div>
+              <div className="text-sm text-muted-foreground">
+                Stand: {todayLabel}
+              </div>
             </div>
-
-            {/* Orders Table */}
-            <div className="animate-in fade-in slide-in-from-left-4 duration-500 delay-100">
-              <OrdersTable
-                orders={openOrders.slice(0, 10)}
-                onOrderClick={setSelectedOrder}
-              />
-            </div>
-
-            {/* Order Trend Chart */}
-            <div className="animate-in fade-in slide-in-from-left-4 duration-500 delay-150">
-              <OrderTrendChart data={chartData} />
-            </div>
-          </div>
-
-          {/* Right Column (35%) */}
-          <div className="space-y-5">
-            {/* Quick Stats */}
-            <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-              <StatCard
-                icon={ShoppingCart}
-                title="Offene Bestellungen"
-                value={openOrders.length}
-                subtitle={`Wert: ${formatCurrency(openOrdersValue)}`}
-                onClick={() => setAllOrdersDialogOpen(true)}
-              />
-            </div>
-
-            <div className="animate-in fade-in slide-in-from-right-4 duration-500 delay-75">
-              <StatCard
-                icon={Truck}
-                title="Lieferungen diese Woche"
-                value={deliveriesThisWeek}
-              />
-            </div>
-
-            <div className="animate-in fade-in slide-in-from-right-4 duration-500 delay-100">
-              <StatCard
-                icon={Package}
-                title="Produkte"
-                value={produkte.length}
-                subtitle={`${uniqueLocations} Lagerorte`}
-              />
-            </div>
-
-            {/* Wareneingang Feed */}
-            <div className="animate-in fade-in slide-in-from-right-4 duration-500 delay-150">
-              <WareneingangFeed
-                items={enrichedWareneingang}
-                onItemClick={setSelectedWareneingang}
-              />
-            </div>
-
-            {/* Desktop Action Button */}
-            <div className="animate-in fade-in slide-in-from-right-4 duration-500 delay-200">
-              <Button
-                className="w-full h-12 text-base shadow-lg"
-                style={{
-                  boxShadow: '0 4px 14px hsl(38 92% 50% / 0.4)',
-                }}
-                onClick={() => setAddWareneingangOpen(true)}
-              >
-                <Plus className="h-5 w-5 mr-2" />
+            <DialogTrigger asChild>
+              <Button className="h-11 px-6 active:translate-y-[1px]">
                 Wareneingang erfassen
               </Button>
+            </DialogTrigger>
+          </div>
+
+          <div className="mt-6 grid gap-6 md:grid-cols-12">
+            <div className="md:col-span-8 flex flex-col gap-6">
+              <Card
+                className={cn(
+                  cardClassName,
+                  "relative min-h-[52vh] overflow-hidden md:min-h-[260px]",
+                  "animate-in fade-in-0 slide-in-from-bottom-2 duration-700"
+                )}
+              >
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                    Kritische Bestaende
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-1 flex-col justify-between gap-6">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-2">
+                      <div className="text-5xl font-semibold md:text-6xl">
+                        {stockSummary.criticalCount}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {stockSummary.criticalCount} von {stockSummary.totalProducts}
+                        {" "}
+                        Produkten unter Mindestbestand
+                      </div>
+                    </div>
+                  <div className="flex items-center gap-3">
+                      <Badge className="bg-secondary text-secondary-foreground">
+                        {healthyPercent}% gesund
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div
+                      className="relative h-2 w-full rounded-full"
+                      style={{
+                        background:
+                          "linear-gradient(90deg, hsl(145 46% 36%), hsl(32 78% 54%) 60%, hsl(4 72% 50%))",
+                      }}
+                    />
+                    <div className="relative h-3">
+                      <div
+                        className="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-[hsl(32_78%_54%)] ring-2 ring-card shadow-sm"
+                        style={{ left: `calc(${markerPosition}% - 6px)` }}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="flex gap-3 overflow-x-auto pb-2 md:hidden">
+                <StatCard
+                  className="min-w-[160px] animate-in fade-in-0 slide-in-from-bottom-2 delay-100 duration-700"
+                  title="Verfuegbar gesamt"
+                  value={formatNumber(totalAvailable)}
+                />
+                <StatCard
+                  className="min-w-[160px] animate-in fade-in-0 slide-in-from-bottom-2 delay-100 duration-700"
+                  title="Offene Bestellungen"
+                  value={formatNumber(openOrders.length)}
+                >
+                  <div className="flex items-center gap-1">
+                    {openStatusKeys.map((status) => (
+                      <span
+                        key={status}
+                        title={`${formatKeyLabel(status)}: ${
+                          openStatusCounts[status] ?? 0
+                        }`}
+                        className={cn(
+                          "h-2 w-2 rounded-full",
+                          status === "entwurf" && "bg-muted-foreground/60",
+                          status === "bestellt" && "bg-accent",
+                          status === "bestaetigt" && "bg-primary",
+                          status === "teilweise_geliefert" &&
+                            "bg-[hsl(145_46%_36%)]"
+                        )}
+                      />
+                    ))}
+                  </div>
+                </StatCard>
+                <StatCard
+                  className="min-w-[160px] animate-in fade-in-0 slide-in-from-bottom-2 delay-100 duration-700"
+                  title="Aktive Produkte"
+                  value={formatNumber(activeProducts)}
+                />
+                <StatCard
+                  className="min-w-[160px] animate-in fade-in-0 slide-in-from-bottom-2 delay-100 duration-700"
+                  title="Lieferanten"
+                  value={formatNumber(lieferanten.length)}
+                >
+                  <div className="text-xs text-muted-foreground">
+                    Durchschn. Lieferzeit: {formatNumber(supplierAverage)} Tage
+                  </div>
+                </StatCard>
+              </div>
+
+              <div className="hidden md:grid md:grid-cols-2 md:gap-4 md:animate-in md:fade-in-0 md:slide-in-from-bottom-2 md:delay-100 md:duration-700">
+                <StatCard title="Verfuegbar gesamt" value={formatNumber(totalAvailable)} />
+                <StatCard title="Offene Bestellungen" value={formatNumber(openOrders.length)}>
+                  <div className="flex items-center gap-1">
+                    {openStatusKeys.map((status) => (
+                      <span
+                        key={status}
+                        title={`${formatKeyLabel(status)}: ${
+                          openStatusCounts[status] ?? 0
+                        }`}
+                        className={cn(
+                          "h-2 w-2 rounded-full",
+                          status === "entwurf" && "bg-muted-foreground/60",
+                          status === "bestellt" && "bg-accent",
+                          status === "bestaetigt" && "bg-primary",
+                          status === "teilweise_geliefert" &&
+                            "bg-[hsl(145_46%_36%)]"
+                        )}
+                      />
+                    ))}
+                  </div>
+                </StatCard>
+                <StatCard title="Aktive Produkte" value={formatNumber(activeProducts)} />
+                <StatCard title="Lieferanten" value={formatNumber(lieferanten.length)}>
+                  <div className="text-xs text-muted-foreground">
+                    Durchschn. Lieferzeit: {formatNumber(supplierAverage)} Tage
+                  </div>
+                </StatCard>
+              </div>
+
+              <Card
+                className={cn(
+                  cardClassName,
+                  "animate-in fade-in-0 slide-in-from-bottom-2 delay-200 duration-700"
+                )}
+              >
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base font-semibold">
+                    Wareneingang Trend (30 Tage)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {chartData.length === 0 ? (
+                    <Empty>
+                      <EmptyHeader>
+                        <EmptyTitle>Noch keine Wareneingaenge</EmptyTitle>
+                        <EmptyDescription>
+                          Erfasse den ersten Wareneingang, um Trends zu sehen.
+                        </EmptyDescription>
+                      </EmptyHeader>
+                    </Empty>
+                  ) : (
+                    <>
+                      <div className="h-[240px] md:hidden">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={chartDataMobile}>
+                            <defs>
+                              <linearGradient id="incomingMobile" x1="0" y1="0" x2="0" y2="1">
+                                <stop
+                                  offset="0%"
+                                  stopColor="hsl(173 42% 32%)"
+                                  stopOpacity={0.3}
+                                />
+                                <stop
+                                  offset="100%"
+                                  stopColor="hsl(173 42% 32%)"
+                                  stopOpacity={0}
+                                />
+                              </linearGradient>
+                            </defs>
+                            <XAxis
+                              dataKey="date"
+                              tickFormatter={(value) => formatDateLabel(value, "dd.MM")}
+                              tick={{ fontSize: 11 }}
+                              interval={2}
+                              axisLine={false}
+                              tickLine={false}
+                              stroke="hsl(var(--muted-foreground))"
+                            />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: "hsl(var(--card))",
+                                border: "1px solid hsl(var(--border))",
+                                borderRadius: 12,
+                              }}
+                              labelFormatter={(value) =>
+                                `Datum: ${formatDateLabel(String(value))}`
+                              }
+                              formatter={(value) => [formatNumber(Number(value)), "Menge"]}
+                            />
+                            <Area
+                              type="monotone"
+                              dataKey="value"
+                              stroke="hsl(173 42% 32%)"
+                              fill="url(#incomingMobile)"
+                              strokeWidth={2}
+                            />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="hidden h-[280px] md:block">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={chartData}>
+                            <defs>
+                              <linearGradient id="incomingDesktop" x1="0" y1="0" x2="0" y2="1">
+                                <stop
+                                  offset="0%"
+                                  stopColor="hsl(173 42% 32%)"
+                                  stopOpacity={0.35}
+                                />
+                                <stop
+                                  offset="100%"
+                                  stopColor="hsl(173 42% 32%)"
+                                  stopOpacity={0}
+                                />
+                              </linearGradient>
+                            </defs>
+                            <XAxis
+                              dataKey="date"
+                              tickFormatter={(value) => formatDateLabel(value, "dd.MM")}
+                              tick={{ fontSize: 12 }}
+                              axisLine={false}
+                              tickLine={false}
+                              stroke="hsl(var(--muted-foreground))"
+                            />
+                            <YAxis
+                              tick={{ fontSize: 12 }}
+                              axisLine={false}
+                              tickLine={false}
+                              stroke="hsl(var(--muted-foreground))"
+                            />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: "hsl(var(--card))",
+                                border: "1px solid hsl(var(--border))",
+                                borderRadius: 12,
+                              }}
+                              labelFormatter={(value) =>
+                                `Datum: ${formatDateLabel(String(value))}`
+                              }
+                              formatter={(value) => [formatNumber(Number(value)), "Menge"]}
+                            />
+                            <Area
+                              type="monotone"
+                              dataKey="value"
+                              stroke="hsl(173 42% 32%)"
+                              fill="url(#incomingDesktop)"
+                              strokeWidth={2}
+                            />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card
+                className={cn(
+                  cardClassName,
+                  "animate-in fade-in-0 slide-in-from-bottom-2 delay-300 duration-700"
+                )}
+              >
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base font-semibold">
+                    Kritische Bestaende
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {stockSummary.criticalItems.length === 0 ? (
+                    <Empty>
+                      <EmptyHeader>
+                        <EmptyTitle>Keine kritischen Bestaende</EmptyTitle>
+                        <EmptyDescription>
+                          Alle Produkte liegen aktuell ueber dem Mindestbestand.
+                        </EmptyDescription>
+                      </EmptyHeader>
+                    </Empty>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="hidden text-xs font-medium text-muted-foreground md:grid md:grid-cols-[2fr_1.2fr_1fr_1fr_1fr] md:gap-3">
+                        <div>Produkt</div>
+                        <div>Lagerort</div>
+                        <div>Verfuegbar</div>
+                        <div>Mindestbestand</div>
+                        <div>Defizit</div>
+                      </div>
+                      {stockSummary.criticalItems.map((item) => (
+                        <div
+                          key={item.product.record_id}
+                          className="rounded-lg border border-border/60 p-3 transition-shadow hover:shadow-sm md:grid md:grid-cols-[2fr_1.2fr_1fr_1fr_1fr] md:items-center md:gap-3"
+                        >
+                          <div className="space-y-1">
+                            <div className="font-medium">
+                              {item.product.fields.produktname ??
+                                item.product.fields.artikelnummer ??
+                                "Produkt"}
+                            </div>
+                            <div className="text-xs text-muted-foreground md:hidden">
+                              Lagerort: {item.locationLabel}
+                            </div>
+                          </div>
+                          <div className="hidden text-sm md:block">
+                            {item.locationLabel}
+                          </div>
+                          <div className="text-sm">{formatNumber(item.available)}</div>
+                          <div className="text-sm">{formatNumber(item.minimum)}</div>
+                          <div className="flex items-center gap-2 text-sm font-semibold text-destructive">
+                            <span className="h-2 w-2 rounded-full bg-destructive" />
+                            {formatNumber(item.deficit)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="md:col-span-4 flex flex-col gap-6">
+              <Card
+                className={cn(
+                  cardClassName,
+                  "animate-in fade-in-0 slide-in-from-bottom-2 delay-400 duration-700"
+                )}
+              >
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base font-semibold">
+                    Aktuelle Bestellungen
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {openOrdersSorted.length === 0 ? (
+                    <Empty>
+                      <EmptyHeader>
+                        <EmptyTitle>Keine offenen Bestellungen</EmptyTitle>
+                        <EmptyDescription>
+                          Es liegen aktuell keine offenen Bestellungen vor.
+                        </EmptyDescription>
+                      </EmptyHeader>
+                    </Empty>
+                  ) : (
+                    <div className="space-y-3">
+                      {openOrdersSorted.slice(0, 6).map((order) => {
+                        const status = order.fields.status
+                        return (
+                          <div
+                            key={order.record_id}
+                            className="rounded-lg border border-border/60 p-3 text-sm transition-shadow hover:shadow-sm"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="space-y-1">
+                                <div className="font-medium">
+                                  {order.fields.bestellnummer ??
+                                    `Bestellung ${order.record_id.slice(-4)}`}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {getSupplierLabel(order.fields.lieferant)} ·{" "}
+                                  {getProductLabel(order.fields.produkt)}
+                                </div>
+                              </div>
+                              {status ? (
+                                <Badge
+                                  className={cn(
+                                    "border-transparent",
+                                    status === "entwurf" &&
+                                      "bg-muted text-muted-foreground",
+                                    status === "bestellt" &&
+                                      "bg-accent text-accent-foreground",
+                                    status === "bestaetigt" &&
+                                      "bg-primary text-primary-foreground",
+                                    status === "teilweise_geliefert" &&
+                                      "bg-[hsl(145_46%_36%)] text-white"
+                                  )}
+                                >
+                                  {formatKeyLabel(status)}
+                                </Badge>
+                              ) : null}
+                            </div>
+                            <div className="mt-2 text-xs text-muted-foreground">
+                              Erwartet: {formatDateLabel(order.fields.erwartetes_lieferdatum)}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card
+                className={cn(
+                  cardClassName,
+                  "animate-in fade-in-0 slide-in-from-bottom-2 delay-500 duration-700"
+                )}
+              >
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base font-semibold">
+                    Letzte Wareneingaenge
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {recentReceipts.length === 0 ? (
+                    <Empty>
+                      <EmptyHeader>
+                        <EmptyTitle>Noch keine Wareneingaenge</EmptyTitle>
+                        <EmptyDescription>
+                          Wareneingaenge erscheinen hier nach der Erfassung.
+                        </EmptyDescription>
+                      </EmptyHeader>
+                    </Empty>
+                  ) : (
+                    <div className="space-y-3">
+                      {recentReceipts.map((receipt) => {
+                        const quality = receipt.fields.qualitaetspruefung
+                        return (
+                          <div
+                            key={receipt.record_id}
+                            className="rounded-lg border border-border/60 p-3 text-sm transition-shadow hover:shadow-sm"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="space-y-1">
+                                <div className="font-medium">
+                                  {getProductLabel(receipt.fields.produkt)}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {getSupplierLabel(receipt.fields.lieferant)}
+                                </div>
+                              </div>
+                              {quality ? (
+                                <Badge
+                                  className={cn(
+                                    "border-transparent",
+                                    quality === "bestanden" &&
+                                      "bg-[hsl(145_46%_36%)] text-white",
+                                    quality === "mit_maengeln" &&
+                                      "bg-accent text-accent-foreground",
+                                    quality === "nicht_bestanden" &&
+                                      "bg-destructive text-white",
+                                    quality === "nicht_geprueft" &&
+                                      "bg-muted text-muted-foreground"
+                                  )}
+                                >
+                                  {formatKeyLabel(quality)}
+                                </Badge>
+                              ) : null}
+                            </div>
+                            <div className="mt-2 text-xs text-muted-foreground">
+                              Menge: {formatNumber(receipt.fields.gelieferte_menge)} ·{" "}
+                              {formatDateLabel(
+                                receipt.fields.lieferdatum ?? receipt.fields.erfassungsdatum
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Mobile Fixed Bottom Action */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-sm border-t">
-        <Button
-          className="w-full h-14 text-base shadow-lg"
-          style={{
-            boxShadow: '0 4px 14px hsl(38 92% 50% / 0.4)',
-          }}
-          onClick={() => setAddWareneingangOpen(true)}
-        >
-          <Plus className="h-5 w-5 mr-2" />
-          Wareneingang erfassen
-        </Button>
-      </div>
+        <div className="fixed inset-x-4 bottom-4 z-40 md:hidden">
+          <DialogTrigger asChild>
+            <Button className="h-12 w-full active:translate-y-[1px]">
+              Wareneingang erfassen
+            </Button>
+          </DialogTrigger>
+        </div>
 
-      {/* Dialogs & Sheets */}
-      <LowStockSheet
-        open={lowStockSheetOpen}
-        onOpenChange={setLowStockSheetOpen}
-        lowStockProducts={stockHealthData.lowStockProducts}
-      />
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Wareneingang erfassen</DialogTitle>
+          </DialogHeader>
+          <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
+            <div className="space-y-2">
+              <Label htmlFor="bestellung">Bestellung</Label>
+              <Select
+                value={formState.bestellungId || "none"}
+                onValueChange={(value) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    bestellungId: value === "none" ? "" : value,
+                  }))
+                }
+              >
+                <SelectTrigger id="bestellung">
+                  <SelectValue placeholder="Bestellung auswaehlen" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Keine</SelectItem>
+                  {bestellungen.map((order) => (
+                    <SelectItem key={order.record_id} value={order.record_id}>
+                      {order.fields.bestellnummer ??
+                        `Bestellung ${order.record_id.slice(-4)}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-      <OrderDetailDialog
-        order={selectedOrder}
-        open={!!selectedOrder}
-        onOpenChange={(open) => !open && setSelectedOrder(null)}
-      />
+            <div className="space-y-2">
+              <Label htmlFor="produkt">Produkt</Label>
+              <Select
+                value={formState.produktId || "none"}
+                onValueChange={(value) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    produktId: value === "none" ? "" : value,
+                  }))
+                }
+              >
+                <SelectTrigger id="produkt">
+                  <SelectValue placeholder="Produkt auswaehlen" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Keines</SelectItem>
+                  {produkte.map((product) => (
+                    <SelectItem key={product.record_id} value={product.record_id}>
+                      {product.fields.produktname ??
+                        product.fields.artikelnummer ??
+                        "Produkt"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-      <WareneingangDetailDialog
-        item={selectedWareneingang}
-        open={!!selectedWareneingang}
-        onOpenChange={(open) => !open && setSelectedWareneingang(null)}
-      />
+            <div className="space-y-2">
+              <Label htmlFor="lieferant">Lieferant</Label>
+              <Select
+                value={formState.lieferantId || "none"}
+                onValueChange={(value) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    lieferantId: value === "none" ? "" : value,
+                  }))
+                }
+              >
+                <SelectTrigger id="lieferant">
+                  <SelectValue placeholder="Lieferant auswaehlen" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Keiner</SelectItem>
+                  {lieferanten.map((supplier) => (
+                    <SelectItem key={supplier.record_id} value={supplier.record_id}>
+                      {supplier.fields.firmenname ??
+                        supplier.fields.lieferantennummer ??
+                        "Lieferant"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-      <AllOrdersDialog
-        orders={openOrders}
-        open={allOrdersDialogOpen}
-        onOpenChange={setAllOrdersDialogOpen}
-        onOrderClick={setSelectedOrder}
-      />
+            <div className="space-y-2">
+              <Label htmlFor="lieferdatum">Lieferdatum</Label>
+              <Input
+                id="lieferdatum"
+                type="date"
+                value={formState.lieferdatum}
+                onChange={(event) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    lieferdatum: event.target.value,
+                  }))
+                }
+              />
+            </div>
 
-      <AddWareneingangForm
-        open={addWareneingangOpen}
-        onOpenChange={setAddWareneingangOpen}
-        openOrders={openOrders}
-        products={produkte}
-        suppliers={lieferanten}
-        onSuccess={fetchData}
-      />
+            <div className="space-y-2">
+              <Label htmlFor="gelieferteMenge">Gelieferte Menge</Label>
+              <Input
+                id="gelieferteMenge"
+                type="number"
+                min="0"
+                step="1"
+                value={formState.gelieferteMenge}
+                onChange={(event) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    gelieferteMenge: event.target.value,
+                  }))
+                }
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="lagerort">Lagerort</Label>
+              <Select
+                value={formState.lagerort || "none"}
+                onValueChange={(value) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    lagerort: value === "none" ? "" : value,
+                  }))
+                }
+              >
+                <SelectTrigger id="lagerort">
+                  <SelectValue placeholder="Lagerort auswaehlen" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Keiner</SelectItem>
+                  {lagerortOptions.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {formatKeyLabel(option)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="qualitaetspruefung">Qualitaetspruefung</Label>
+              <Select
+                value={formState.qualitaetspruefung || "none"}
+                onValueChange={(value) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    qualitaetspruefung: value === "none" ? "" : value,
+                  }))
+                }
+              >
+                <SelectTrigger id="qualitaetspruefung">
+                  <SelectValue placeholder="Status auswaehlen" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Keine</SelectItem>
+                  {qualitaetOptions.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {formatKeyLabel(option)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="lieferscheinnummer">Lieferscheinnummer</Label>
+              <Input
+                id="lieferscheinnummer"
+                value={formState.lieferscheinnummer}
+                onChange={(event) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    lieferscheinnummer: event.target.value,
+                  }))
+                }
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="erfasstVon">Erfasst von</Label>
+              <Input
+                id="erfasstVon"
+                value={formState.erfasstVon}
+                onChange={(event) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    erfasstVon: event.target.value,
+                  }))
+                }
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="erfassungsdatum">Erfassungsdatum</Label>
+              <Input
+                id="erfassungsdatum"
+                type="datetime-local"
+                value={formState.erfassungsdatum}
+                onChange={(event) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    erfassungsdatum: event.target.value,
+                  }))
+                }
+              />
+            </div>
+
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="abweichungen">Abweichungen</Label>
+              <Textarea
+                id="abweichungen"
+                rows={3}
+                value={formState.abweichungen}
+                onChange={(event) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    abweichungen: event.target.value,
+                  }))
+                }
+              />
+            </div>
+
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="notizen">Notizen</Label>
+              <Textarea
+                id="notizen"
+                rows={3}
+                value={formState.notizen}
+                onChange={(event) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    notizen: event.target.value,
+                  }))
+                }
+              />
+            </div>
+
+            {submitError ? (
+              <div className="md:col-span-2">
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Speichern fehlgeschlagen</AlertTitle>
+                  <AlertDescription>{submitError}</AlertDescription>
+                </Alert>
+              </div>
+            ) : null}
+
+            <div className="md:col-span-2 flex justify-end gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                className="active:translate-y-[1px]"
+                onClick={() => setActionOpen(false)}
+              >
+                Abbrechen
+              </Button>
+              <Button
+                type="submit"
+                disabled={submitting}
+                className="active:translate-y-[1px]"
+              >
+                {submitting ? "Speichern..." : "Speichern"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
-  );
+  )
 }

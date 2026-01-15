@@ -1,33 +1,34 @@
-# Design Brief: Lagerverwaltungssystem
+# Design Brief: Lagerverwaltungssystem Dashboard
 
 ## 1. App Analysis
 
 ### What This App Does
-A warehouse management system (Lagerverwaltungssystem) that tracks products, inventory levels, suppliers, orders, and incoming goods. It connects suppliers to products, manages stock across multiple storage locations, and monitors the full procurement-to-inventory lifecycle.
+This app manages a small-to-medium warehouse: suppliers, purchase orders, products, current stock levels, and goods receipts. The dashboard must answer "Do we have enough stock right now?" and "What is coming in next?" while making it easy to record new goods arrivals.
 
 ### Who Uses This
-Warehouse managers and logistics staff who need quick visibility into stock levels, pending orders, and incoming deliveries. They work fast-paced environments where knowing what's low, what's arriving, and what needs attention is critical.
+Operations and warehouse managers who need quick, practical answers. They are not technical, so the dashboard must be clear, minimal, and task-focused.
 
 ### The ONE Thing Users Care About Most
-**Stock health** - immediately seeing which products are running low (below minimum stock) and what orders/deliveries are expected. A warehouse manager opening this dashboard needs to know: "Do I have stock problems right now?"
+Which products are at risk right now (below minimum stock) so they can act immediately.
 
 ### Primary Actions (IMPORTANT!)
-1. **Wareneingang erfassen** → Primary Action Button (recording incoming goods is the most frequent daily task)
-2. Neue Bestellung anlegen (creating new orders when stock is low)
-3. Bestand anpassen (adjusting inventory after counts)
+1. Wareneingang erfassen -> Primary Action Button
+2. Bestellung anlegen
+3. Produkt anlegen
+4. Lieferant pflegen
 
 ---
 
 ## 2. What Makes This Design Distinctive
 
 ### Visual Identity
-An industrial, functional aesthetic with warm concrete-gray undertones and a bold amber accent color. The design feels like a modern logistics control room - professional, efficient, but not sterile. The amber accent signals alerts and actions, creating urgency where needed while keeping the overall feel calm and organized.
+A warm, paper-like background paired with a deep petrol-green primary and a brass accent creates an "industrial label" feel that fits warehouse work. The contrast is soft but confident, with a single bold accent used as a signal color for urgency.
 
 ### Layout Strategy
-Desktop uses a 65/35 left-heavy split: the left side dominates with the hero stock health indicator and order status, while the right column provides a compact activity feed and quick stats. This creates a clear "command center on left, details on right" mental model. The hero KPI (products below minimum stock) uses massive typography (64px) to grab attention immediately.
+Asymmetric layout with a dominant hero card on the left and stacked operational lists on the right. The hero is oversized with generous whitespace and a unique status ribbon, while the secondary KPIs sit in a compact grid beneath it. This creates a clear visual anchor and a flow from "risk" -> "context" -> "details".
 
 ### Unique Element
-The stock health hero uses a "gauge" visual metaphor - a large circular progress ring showing percentage of products with healthy stock levels. The ring uses a thick 10px stroke with amber for the healthy portion and a subtle gray track. This creates an instantly readable health check that feels more sophisticated than a plain number.
+An "Inventory Health Ribbon" inside the hero card: a thin horizontal gradient bar (green to amber to red) with a small brass marker showing the current healthy-stock percentage. This gives the hero a memorable, custom identity without adding clutter.
 
 ---
 
@@ -36,269 +37,218 @@ The stock health hero uses a "gauge" visual metaphor - a large circular progress
 ### Font
 - **Family:** Space Grotesk
 - **URL:** `https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap`
-- **Why this font:** Space Grotesk has an industrial, technical character that suits warehouse/logistics operations. Its slightly geometric forms feel modern and data-focused without being cold.
+- **Why this font:** Geometric but friendly, it looks modern and precise for analytics while still approachable for non-technical users.
 
 ### Color Palette
 All colors as complete hsl() functions:
 
 | Purpose | Color | CSS Variable |
 |---------|-------|--------------|
-| Page background | `hsl(40 10% 97%)` | `--background` |
-| Main text | `hsl(220 15% 20%)` | `--foreground` |
-| Card background | `hsl(0 0% 100%)` | `--card` |
-| Card text | `hsl(220 15% 20%)` | `--card-foreground` |
-| Borders | `hsl(40 10% 88%)` | `--border` |
-| Primary action (amber) | `hsl(38 92% 50%)` | `--primary` |
-| Text on primary | `hsl(40 10% 10%)` | `--primary-foreground` |
-| Accent highlight | `hsl(38 70% 95%)` | `--accent` |
-| Muted background | `hsl(40 10% 94%)` | `--muted` |
-| Muted text | `hsl(220 10% 50%)` | `--muted-foreground` |
-| Success/healthy | `hsl(152 60% 42%)` | (component use) |
-| Warning/low stock | `hsl(38 92% 50%)` | (component use) |
-| Error/critical | `hsl(0 72% 51%)` | `--destructive` |
+| Page background | `hsl(36 33% 97%)` | `--background` |
+| Main text | `hsl(218 17% 18%)` | `--foreground` |
+| Card background | `hsl(36 30% 99%)` | `--card` |
+| Card text | `hsl(218 17% 18%)` | `--card-foreground` |
+| Borders | `hsl(30 14% 88%)` | `--border` |
+| Primary action | `hsl(173 42% 32%)` | `--primary` |
+| Text on primary | `hsl(0 0% 100%)` | `--primary-foreground` |
+| Accent highlight | `hsl(32 78% 54%)` | `--accent` |
+| Muted background | `hsl(36 22% 92%)` | `--muted` |
+| Muted text | `hsl(215 12% 44%)` | `--muted-foreground` |
+| Success/positive | `hsl(145 46% 36%)` | (component use) |
+| Error/negative | `hsl(4 72% 50%)` | `--destructive` |
 
 ### Why These Colors
-The warm off-white background (slight cream undertone) creates a softer, less clinical feel than pure white. The amber primary is distinctive and carries industrial/safety connotations (like warehouse signage). The dark blue-gray text provides excellent readability while being softer than pure black.
+The warm base reduces glare for long sessions. The deep petrol primary feels operational and serious, while the brass accent signals attention without feeling alarmist. The palette stays calm but makes risk states instantly visible.
 
 ### Background Treatment
-Solid warm off-white (`hsl(40 10% 97%)`) - intentionally plain to let the cards and data stand out. The warmth comes from the subtle yellow undertone in the gray.
+A subtle radial gradient from the top-left using the accent at ~8% opacity fading into the warm background. This keeps the page light but gives it an intentional, crafted feel.
 
 ---
 
 ## 4. Mobile Layout (Phone)
 
+Design mobile as a COMPLETELY SEPARATE experience, not squeezed desktop.
+
 ### Layout Approach
-Mobile prioritizes the stock health check as a full-width hero that dominates the first viewport. Secondary stats use a compact horizontal scroll strip rather than stacked cards, saving vertical space. The design creates visual hierarchy through size contrast: hero is massive, everything else is compact.
+The hero dominates the first viewport (about 55% of screen height) with a large number and the ribbon. A horizontal KPI strip provides quick stats without forcing a grid. Lists are stacked in a clear, single-column flow.
 
 ### What Users See (Top to Bottom)
 
 **Header:**
-- Left: "Lagerverwaltung" title in Space Grotesk 600 weight
-- Right: Current date (formatted as "13. Jan 2026")
+- Title "Lager Cockpit" on the left
+- Small text "Stand: dd.MM.yyyy" on the right
 
 **Hero Section (The FIRST thing users see):**
-- Takes 50% of viewport height
-- Large circular progress ring (180px diameter) showing stock health percentage
-- Inside ring: The number of products below minimum (e.g., "3") in 48px bold
-- Below ring: "Produkte unter Mindestbestand" label
-- Ring color: amber fill on gray track
-- Tappable to see list of low-stock products
+- Title: "Kritische Bestaende"
+- Large number (48-56px, bold) for count of products below minimum
+- Subline: "X von Y Produkten unter Mindestbestand"
+- Inventory Health Ribbon directly under the number
+- This answers the most urgent question: where risk exists right now
 
-**Section 2: Quick Stats Strip**
-- Horizontal scrollable row of compact stat badges
-- Stats: Offene Bestellungen | Lieferungen heute | Gesamtprodukte | Lagerorte
-- Each stat: icon + number + label, in a pill-shaped container
-- 12px vertical padding, minimal style
+**Section 2: KPI Strip**
+- Horizontal scroll row of 4 compact cards (min-width 160px each)
+- KPIs: Verfuegbar gesamt, Offene Bestellungen, Aktive Produkte, Lieferanten
 
-**Section 3: Offene Bestellungen**
-- Card with "Offene Bestellungen" header
-- List of 3-4 most recent pending orders
-- Each row: Order number, supplier name, expected date, status badge
-- Compact rows (48px height)
-- "Alle anzeigen" link at bottom
+**Section 3: Wareneingang Trend**
+- Full-width card with a simplified area chart
+- Show last 14 days only, minimal axis labels (every 3rd tick)
 
-**Section 4: Letzte Wareneingänge**
-- Card with "Letzte Wareneingänge" header
-- List of 3-4 recent incoming goods
-- Each row: Product name, quantity, quality status badge, date
-- "Alle anzeigen" link at bottom
+**Section 4: Kritische Bestaende Liste**
+- Stacked cards showing Produktname, verfuegbar vs mindestbestand, Lagerort
+- Emphasize deficit with a small red dot and bold deficit value
 
-**Bottom Fixed Action:**
-- Fixed bottom bar with amber "Wareneingang erfassen" button
-- Full width minus 16px margins
-- 56px height, rounded corners
+**Section 5: Aktuelle Bestellungen**
+- Simple list cards with Bestellnummer, Lieferant, erwartetes Lieferdatum, Status badge
 
-### What is HIDDEN on Mobile
-- Detailed charts (shown only on desktop)
-- Supplier ratings breakdown
-- Storage location distribution
-- Extended order history
+**Section 6: Letzte Wareneingaenge**
+- List cards with Produkt, gelieferte Menge, Lieferdatum, Qualitaetspruefung badge
+
+**Bottom Navigation / Action:**
+- Fixed bottom primary button: "Wareneingang erfassen"
+
+### Mobile-Specific Adaptations
+- KPI cards scroll horizontally instead of shrinking.
+- Lists switch to stacked cards with clear spacing.
+- Chart reduces tick density and hides Y-axis label on small screens.
 
 ### Touch Targets
-- All tappable rows minimum 48px height
-- Primary action button 56px height
-- Stats in scroll strip 44px height
+- All buttons and list items minimum height 44px.
 
-### Interactive Elements
-- Hero ring: tap to see low-stock product list (sheet slides up)
-- Order rows: tap to see order details
-- Wareneingang rows: tap to see delivery details
+### Interactive Elements (if applicable)
+- Chart tooltip on tap.
+- Primary action button opens a modal form.
 
 ---
 
 ## 5. Desktop Layout
 
 ### Overall Structure
-A 65/35 left-heavy split with clear visual hierarchy. The left column contains the hero metrics and detailed data tables. The right column serves as a "sidebar" with activity feed and quick actions. Eye flow: Hero (top-left) → Secondary stats (below hero) → Recent activity (right).
+A 12-column grid with an asymmetric layout: the hero and analytics occupy the left 8 columns, while operational lists stack in the right 4 columns. The eye goes hero -> KPI grid -> chart -> critical list -> right-side lists.
 
-### Column Layout
-- Left column (65%): Hero stock health + orders table + stock trend chart
-- Right column (35%): Quick stats cards + recent Wareneingänge feed + action buttons
-
-### Layout Diagram (ASCII)
-```
-┌────────────────────────────────┐  ┌─────────────────────┐
-│                                │  │   Quick Stats       │
-│      HERO: Stock Health        │  │   (stacked 3x)      │
-│   (gauge + low stock count)    │  ├─────────────────────┤
-│           65%                  │  │                     │
-│                                │  │   Wareneingänge     │
-└────────────────────────────────┘  │   Feed (scroll)     │
-                                    │        35%          │
-┌────────────────────────────────┐  │                     │
-│                                │  ├─────────────────────┤
-│   Offene Bestellungen Table    │  │  [Action Button]    │
-│   (sortable, filterable)       │  │  Wareneingang       │
-│                                │  │  erfassen           │
-└────────────────────────────────┘  └─────────────────────┘
-
-┌────────────────────────────────┐
-│   Bestelltrend Chart           │
-│   (line chart, last 30 days)   │
-└────────────────────────────────┘
-```
+### Section Layout
+- Top header row: title + "Stand" date on left, primary action button on right
+- Left column (8/12):
+  - Hero card (full width, ~260px tall)
+  - KPI grid (2x2 cards)
+  - Wareneingang Trend chart (full width, ~280px tall)
+  - Kritische Bestaende table/list (full width)
+- Right column (4/12):
+  - Aktuelle Bestellungen card (tall, scrollable)
+  - Letzte Wareneingaenge card (shorter, scrollable)
 
 ### What Appears on Hover
-- Order rows: subtle background highlight, "Details anzeigen" text appears
-- Wareneingang items: timestamp appears
-- Quick stats: tooltip with exact numbers and change indicators
+- Cards lift with a soft shadow and a thin accent border on hover.
+- Chart points show tooltip with exact date and quantity.
 
-### Clickable/Interactive Areas
-- Hero gauge: click to open modal with full list of low-stock products
-- Order rows: click to expand inline details or open modal
-- Wareneingang items: click for full delivery details
-- All stat cards: click to navigate to filtered list views
+### Clickable/Interactive Areas (if applicable)
+- Primary action button opens the Wareneingang form dialog.
+- Chart tooltip is hoverable.
 
 ---
 
 ## 6. Components
 
-### Hero KPI: Stock Health Gauge
-The MOST important metric - shows what percentage of products have healthy stock levels.
+### Hero KPI
+The MOST important metric that users see first.
 
-- **Title:** Lagergesundheit
-- **Data source:** Lagerbestand + Produkte (join on produkt reference)
-- **Calculation:**
-  1. Get all Lagerbestand records
-  2. For each, compare `menge` (current) with linked Produkte's `mindestbestand`
-  3. Count products where menge < mindestbestand
-  4. Percentage = (healthy / total) * 100
-- **Display:**
-  - Large circular progress ring (200px desktop, 180px mobile)
-  - Percentage in center (64px bold)
-  - Below: Count of low-stock products (e.g., "3 Produkte unter Minimum")
-- **Context shown:** Percentage healthy vs total, count of problems
-- **Why this is the hero:** Warehouse managers need instant visibility into stock problems. This answers "Is my warehouse healthy?" in one glance.
+- **Title:** Kritische Bestaende
+- **Data source:** Produkte + Lagerbestand
+- **Calculation:** For each product, sum Lagerbestand.verfuegbar. Count products where sum < Produkte.mindestbestand (treat missing stock as 0).
+- **Display:** Large number with subline, plus Inventory Health Ribbon
+- **Context shown:** "X von Y Produkten unter Mindestbestand" and a small badge showing percentage healthy
+- **Why this is the hero:** It highlights immediate risk and drives action
 
 ### Secondary KPIs
 
+**Verfuegbar gesamt**
+- Source: Lagerbestand
+- Calculation: Sum of verfuegbar
+- Format: number (de-DE)
+- Display: Compact card with bold number and muted label
+
 **Offene Bestellungen**
 - Source: Bestellungen
-- Calculation: Count where status IN ('entwurf', 'bestellt', 'bestaetigt', 'teilweise_geliefert')
+- Calculation: Count status in entwurf, bestellt, bestaetigt, teilweise_geliefert
 - Format: number
-- Display: Card with icon, large number (32px), label below
+- Display: Compact card with status chips (small dots for each status)
 
-**Lieferungen erwartet (diese Woche)**
-- Source: Bestellungen
-- Calculation: Count where erwartetes_lieferdatum is within current week
+**Aktive Produkte**
+- Source: Produkte
+- Calculation: Count aktiv === 'aktiv'
 - Format: number
-- Display: Card with icon, large number (32px), label below
+- Display: Compact card
 
-**Gesamtwert offener Bestellungen**
-- Source: Bestellungen (filtered as above)
-- Calculation: Sum of gesamtpreis
-- Format: currency (EUR)
-- Display: Card with icon, formatted number (€1.234,56), label below
+**Lieferanten**
+- Source: Lieferanten
+- Calculation: Count of Lieferanten records
+- Format: number
+- Display: Compact card with subline "Durchschn. Lieferzeit: X Tage" (average of lieferzeit)
 
-### Chart: Bestelltrend
-- **Type:** Area chart - shows volume over time, area fill creates visual weight
-- **Title:** Bestellungen (letzte 30 Tage)
-- **What question it answers:** Are we ordering more or less than usual? Any patterns?
-- **Data source:** Bestellungen
-- **X-axis:** bestelldatum, grouped by day, labeled as "TT.MM"
-- **Y-axis:** Count of orders OR sum of gesamtpreis (toggle)
-- **Mobile simplification:** Hidden on mobile to save space
+### Chart (if applicable)
+- **Type:** Area chart
+- **Title:** Wareneingang Trend (30 Tage)
+- **What question it answers:** Are incoming quantities rising or falling?
+- **Data source:** Wareneingang
+- **X-axis:** lieferdatum (fallback: erfassungsdatum), label as dd.MM
+- **Y-axis:** Sum of gelieferte_menge per day
+- **Mobile simplification:** last 14 days only, fewer ticks
 
-### Lists/Tables
+### Lists/Tables (if applicable)
 
-**Offene Bestellungen (Desktop Table)**
-- Purpose: See all pending orders at a glance, sorted by urgency
-- Source: Bestellungen where status NOT IN ('geliefert', 'storniert')
-- Fields shown:
-  - bestellnummer
-  - lieferant (resolved via lookup) → firmenname
-  - produkt (resolved via lookup) → produktname
-  - erwartetes_lieferdatum (formatted)
-  - status (as colored badge)
-  - gesamtpreis (formatted as €)
-- Desktop style: Full table with sortable columns
-- Sort: By erwartetes_lieferdatum ascending (soonest first)
-- Limit: 10 items, pagination available
+**Kritische Bestaende**
+- Purpose: Show which products need action now
+- Source: Produkte + Lagerbestand
+- Fields shown: Produktname, verfuegbar, mindestbestand, Lagerort (or "Mehrere Lagerorte")
+- Mobile style: stacked cards
+- Desktop style: table-like list with columns
+- Sort: largest deficit first
+- Limit: 8 items
 
-**Offene Bestellungen (Mobile List)**
-- Same data, simplified display
-- Each row: Order # + Supplier | Expected date | Status badge
-- Sort: Same as desktop
-- Limit: 5 items
+**Aktuelle Bestellungen**
+- Purpose: Keep orders in view
+- Source: Bestellungen + Lieferanten + Produkte
+- Fields shown: Bestellnummer, Lieferant, Produkt, erwartetes Lieferdatum, Status badge
+- Mobile style: stacked cards
+- Desktop style: compact list
+- Sort: erwartetes_lieferdatum ascending (soonest first)
+- Limit: 6 items
 
-**Letzte Wareneingänge Feed**
-- Purpose: Track recent deliveries and quality results
-- Source: Wareneingang, sorted by erfassungsdatum DESC
-- Fields shown:
-  - produkt → produktname
-  - gelieferte_menge + unit (from product)
-  - qualitaetspruefung (as icon/badge)
-  - lieferdatum (formatted)
-- Mobile style: Compact cards
-- Desktop style: List items in sidebar
-- Sort: By erfassungsdatum descending (newest first)
-- Limit: 5 items
+**Letzte Wareneingaenge**
+- Purpose: Confirm recent receipts and quality status
+- Source: Wareneingang + Produkte + Lieferanten
+- Fields shown: Produkt, Lieferant, gelieferte Menge, Lieferdatum, Qualitaetspruefung badge
+- Mobile style: stacked cards
+- Desktop style: compact list
+- Sort: erfassungsdatum desc (fallback: lieferdatum)
+- Limit: 6 items
 
 ### Primary Action Button (REQUIRED!)
 
-- **Label:** "Wareneingang erfassen"
+- **Label:** Wareneingang erfassen
 - **Action:** add_record
-- **Target app:** Wareneingang (APP_ID: 69131a4f29930062bbf5d304)
-- **What data:** Form with fields:
-  - bestellung (select from open orders)
-  - produkt (auto-filled from selected order, or manual select)
-  - lieferant (auto-filled from selected order)
-  - lieferdatum (date picker, default today)
-  - gelieferte_menge (number input)
-  - lagerort (select from options)
-  - qualitaetspruefung (select: bestanden/mit_maengeln/nicht_bestanden/nicht_geprueft)
-  - lieferscheinnummer (text input)
-  - erfasst_von (text input, could default to user name)
-- **Mobile position:** bottom_fixed (always visible amber bar)
-- **Desktop position:** sidebar (prominent button in right column)
-- **Why this action:** Recording incoming goods is the most frequent daily task in warehouse operations. Every delivery needs to be logged immediately for accurate inventory.
+- **Target app:** Wareneingang
+- **What data:** bestellung (applookup), produkt (applookup), lieferant (applookup), lieferdatum (date), gelieferte_menge (number), lagerort (lookup), qualitaetspruefung (lookup), lieferscheinnummer (text), erfasst_von (text), erfassungsdatum (datetimeminute), abweichungen (textarea), notizen (textarea)
+- **Mobile position:** bottom_fixed
+- **Desktop position:** header
+- **Why this action:** Recording incoming goods is the most frequent warehouse task and updates stock visibility immediately
 
 ---
 
 ## 7. Visual Details
 
 ### Border Radius
-- Cards: 12px (rounded)
-- Buttons: 10px
-- Badges/Pills: 999px (full pill)
-- Input fields: 8px
+- rounded (12px)
 
 ### Shadows
-- Cards: subtle (`0 1px 3px hsl(220 15% 20% / 0.08)`)
-- Hover state: slightly elevated (`0 4px 12px hsl(220 15% 20% / 0.12)`)
-- Primary button: colored shadow (`0 4px 14px hsl(38 92% 50% / 0.4)`)
+- subtle: soft 0 6px 18px rgba(0,0,0,0.06)
 
 ### Spacing
-- Page padding: 24px desktop, 16px mobile
-- Card padding: 24px desktop, 16px mobile
-- Between cards: 20px desktop, 16px mobile
-- Tight spacing within card sections: 12px
+- spacious: generous padding in cards (20-24px)
 
 ### Animations
-- **Page load:** Staggered fade-in (cards animate in sequence, 50ms delay each)
-- **Hover effects:** Scale 1.02 on interactive cards, background color shift on rows
-- **Tap feedback:** Brief scale down (0.98) on buttons, ripple effect on primary action
-- **Number counting:** Hero percentage animates from 0 to final value over 800ms
+- **Page load:** staggered fade-up for hero, KPI grid, chart, lists (120ms gap)
+- **Hover effects:** cards lift slightly with stronger shadow and thin accent border
+- **Tap feedback:** buttons press with a 1px translate down
 
 ---
 
@@ -307,38 +257,26 @@ The MOST important metric - shows what percentage of products have healthy stock
 The implementer MUST copy these values exactly into `src/index.css`:
 
 ```css
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
-
 :root {
-  --background: hsl(40 10% 97%);
-  --foreground: hsl(220 15% 20%);
-  --card: hsl(0 0% 100%);
-  --card-foreground: hsl(220 15% 20%);
-  --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(220 15% 20%);
-  --primary: hsl(38 92% 50%);
-  --primary-foreground: hsl(40 10% 10%);
-  --secondary: hsl(40 10% 94%);
-  --secondary-foreground: hsl(220 15% 20%);
-  --muted: hsl(40 10% 94%);
-  --muted-foreground: hsl(220 10% 50%);
-  --accent: hsl(38 70% 95%);
-  --accent-foreground: hsl(38 92% 35%);
-  --destructive: hsl(0 72% 51%);
-  --border: hsl(40 10% 88%);
-  --input: hsl(40 10% 88%);
-  --ring: hsl(38 92% 50%);
   --radius: 0.75rem;
-
-  --chart-1: hsl(38 92% 50%);
-  --chart-2: hsl(152 60% 42%);
-  --chart-3: hsl(220 15% 60%);
-  --chart-4: hsl(38 70% 70%);
-  --chart-5: hsl(0 72% 60%);
-}
-
-body {
-  font-family: 'Space Grotesk', sans-serif;
+  --background: hsl(36 33% 97%);
+  --foreground: hsl(218 17% 18%);
+  --card: hsl(36 30% 99%);
+  --card-foreground: hsl(218 17% 18%);
+  --popover: hsl(36 30% 99%);
+  --popover-foreground: hsl(218 17% 18%);
+  --primary: hsl(173 42% 32%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(34 24% 92%);
+  --secondary-foreground: hsl(218 17% 20%);
+  --muted: hsl(36 22% 92%);
+  --muted-foreground: hsl(215 12% 44%);
+  --accent: hsl(32 78% 54%);
+  --accent-foreground: hsl(0 0% 100%);
+  --destructive: hsl(4 72% 50%);
+  --border: hsl(30 14% 88%);
+  --input: hsl(30 14% 88%);
+  --ring: hsl(173 42% 32%);
 }
 ```
 
@@ -347,14 +285,9 @@ body {
 ## 9. Implementation Checklist
 
 The implementer should verify:
-- [ ] Space Grotesk font loaded from Google Fonts URL
-- [ ] All CSS variables copied exactly to index.css
-- [ ] Mobile layout matches Section 4 (hero gauge dominant, horizontal scroll stats)
-- [ ] Desktop layout matches Section 5 (65/35 split, asymmetric)
-- [ ] Hero gauge is prominent with circular progress ring
-- [ ] Amber accent color used for primary actions and warnings
-- [ ] Low-stock products highlighted with warning styling
-- [ ] "Wareneingang erfassen" button fixed at bottom on mobile
-- [ ] Tables sortable on desktop
-- [ ] Smooth staggered animations on page load
-- [ ] All interactive elements have hover/tap states
+- [ ] Font loaded from URL above
+- [ ] All CSS variables copied exactly
+- [ ] Mobile layout matches Section 4
+- [ ] Desktop layout matches Section 5
+- [ ] Hero element is prominent as described
+- [ ] Colors create the mood described in Section 2
