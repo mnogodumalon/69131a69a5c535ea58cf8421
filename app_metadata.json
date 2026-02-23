@@ -12,7 +12,14 @@
           "type": "string",
           "subtype": "text",
           "fulltype": "string/text",
-          "description": "A string value not longer than 4000 characters (or `null`)."
+          "description": "A string value not longer than 4000 characters (or `null`/`None`).",
+          "required": null,
+          "in_list": true,
+          "in_mobile_list": true,
+          "in_text": true,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true
         },
         "lieferantennummer": {
           "identifier": "lieferantennummer",
@@ -20,7 +27,14 @@
           "type": "string",
           "subtype": "text",
           "fulltype": "string/text",
-          "description": "A string value not longer than 4000 characters (or `null`)."
+          "description": "A string value not longer than 4000 characters (or `null`/`None`).",
+          "required": null,
+          "in_list": true,
+          "in_mobile_list": true,
+          "in_text": true,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true
         },
         "ansprechpartner": {
           "identifier": "ansprechpartner",
@@ -28,7 +42,14 @@
           "type": "string",
           "subtype": "text",
           "fulltype": "string/text",
-          "description": "A string value not longer than 4000 characters (or `null`)."
+          "description": "A string value not longer than 4000 characters (or `null`/`None`).",
+          "required": null,
+          "in_list": true,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true
         },
         "email": {
           "identifier": "email",
@@ -36,7 +57,14 @@
           "type": "string",
           "subtype": "email",
           "fulltype": "string/email",
-          "description": "A valid email address (or `null`)."
+          "description": "A valid email address (or `null`/`None`).",
+          "required": null,
+          "in_list": true,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true
         },
         "telefon": {
           "identifier": "telefon",
@@ -44,7 +72,14 @@
           "type": "string",
           "subtype": "tel",
           "fulltype": "string/tel",
-          "description": "A valid telephone number. Might include country prefix and should include area code (or `null`)."
+          "description": "A valid telephone number. Might include country prefix and should include area code (or `null`/`None`).",
+          "required": null,
+          "in_list": true,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true
         },
         "strasse": {
           "identifier": "strasse",
@@ -52,7 +87,14 @@
           "type": "string",
           "subtype": "text",
           "fulltype": "string/text",
-          "description": "A string value not longer than 4000 characters (or `null`)."
+          "description": "A string value not longer than 4000 characters (or `null`/`None`).",
+          "required": null,
+          "in_list": false,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true
         },
         "plz": {
           "identifier": "plz",
@@ -60,7 +102,14 @@
           "type": "string",
           "subtype": "text",
           "fulltype": "string/text",
-          "description": "A string value not longer than 4000 characters (or `null`)."
+          "description": "A string value not longer than 4000 characters (or `null`/`None`).",
+          "required": null,
+          "in_list": false,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true
         },
         "stadt": {
           "identifier": "stadt",
@@ -68,7 +117,14 @@
           "type": "string",
           "subtype": "text",
           "fulltype": "string/text",
-          "description": "A string value not longer than 4000 characters (or `null`)."
+          "description": "A string value not longer than 4000 characters (or `null`/`None`).",
+          "required": null,
+          "in_list": false,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true
         },
         "land": {
           "identifier": "land",
@@ -76,7 +132,14 @@
           "type": "string",
           "subtype": "text",
           "fulltype": "string/text",
-          "description": "A string value not longer than 4000 characters (or `null`)."
+          "description": "A string value not longer than 4000 characters (or `null`/`None`).",
+          "required": null,
+          "in_list": false,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true
         },
         "zahlungsziel": {
           "identifier": "zahlungsziel",
@@ -84,7 +147,14 @@
           "type": "number",
           "subtype": null,
           "fulltype": "number",
-          "description": "A decimal number value (or `null`).",
+          "description": "A decimal number value (or `null`/`None`).",
+          "required": null,
+          "in_list": false,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true,
           "precision": null
         },
         "lieferzeit": {
@@ -93,7 +163,14 @@
           "type": "number",
           "subtype": null,
           "fulltype": "number",
-          "description": "A decimal number value (or `null`).",
+          "description": "A decimal number value (or `null`/`None`).",
+          "required": null,
+          "in_list": false,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true,
           "precision": null
         },
         "bewertung": {
@@ -102,7 +179,14 @@
           "type": "lookup",
           "subtype": "select",
           "fulltype": "lookup/select",
-          "description": "One selected option of multiple available options (or `null`).\n\nThe available options are defined in the `lookup_data` attribute of this control's LivingApp.\n\nThe field value will be the key in this `lookup_data` attribute or `null`.",
+          "description": "One selected option of multiple available options (or `null`/`None`).\n\nThe available options are defined in the `lookup_data` attribute of this control.\n\nThe field value will be the key in this `lookup_data` attribute or `null`/`None`.",
+          "required": null,
+          "in_list": false,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true,
           "lookup_data": {
             "sehr_gut": "Sehr gut \u2b50\u2b50\u2b50\u2b50\u2b50",
             "gut": "Gut \u2b50\u2b50\u2b50\u2b50",
@@ -117,7 +201,14 @@
           "type": "string",
           "subtype": "textarea",
           "fulltype": "string/textarea",
-          "description": "A string value that can contain multiple lines of text (or `null`)."
+          "description": "A string value that can contain multiple lines of text (or `null`/`None`).",
+          "required": null,
+          "in_list": false,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true
         }
       }
     },
@@ -131,7 +222,14 @@
           "type": "string",
           "subtype": "text",
           "fulltype": "string/text",
-          "description": "A string value not longer than 4000 characters (or `null`)."
+          "description": "A string value not longer than 4000 characters (or `null`/`None`).",
+          "required": null,
+          "in_list": true,
+          "in_mobile_list": true,
+          "in_text": true,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true
         },
         "lieferant": {
           "identifier": "lieferant",
@@ -139,7 +237,14 @@
           "type": "applookup",
           "subtype": "select",
           "fulltype": "applookup/select",
-          "description": "A reference to another LivingApp record from a target lookup app (or `null`).\n\nThe field value will be a valid record URL in the form `https://<hostname>/rest/apps/<app-id>/records/<record-id>` or `null`.",
+          "description": "A reference to a LivingApp record from the target lookup app 'Lieferanten' with the id `69131a4ee2d56093dc1c94b0` (or `null`/`None`).\n\nThe field value will be a valid record URL in the form `https://my.living-apps.de/rest/apps/69131a4ee2d56093dc1c94b0/<record-id>` or `null`/`None`.",
+          "required": null,
+          "in_list": true,
+          "in_mobile_list": true,
+          "in_text": true,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true,
           "lookup_app": "https://my.living-apps.de/rest/apps/69131a4ee2d56093dc1c94b0"
         },
         "produkt": {
@@ -148,7 +253,14 @@
           "type": "applookup",
           "subtype": "select",
           "fulltype": "applookup/select",
-          "description": "A reference to another LivingApp record from a target lookup app (or `null`).\n\nThe field value will be a valid record URL in the form `https://<hostname>/rest/apps/<app-id>/records/<record-id>` or `null`.",
+          "description": "A reference to a LivingApp record from the target lookup app 'Produkte' with the id `69131a49a83d8e2ed62188f0` (or `null`/`None`).\n\nThe field value will be a valid record URL in the form `https://my.living-apps.de/rest/apps/69131a49a83d8e2ed62188f0/<record-id>` or `null`/`None`.",
+          "required": null,
+          "in_list": true,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true,
           "lookup_app": "https://my.living-apps.de/rest/apps/69131a49a83d8e2ed62188f0"
         },
         "bestellmenge": {
@@ -157,7 +269,14 @@
           "type": "number",
           "subtype": null,
           "fulltype": "number",
-          "description": "A decimal number value (or `null`).",
+          "description": "A decimal number value (or `null`/`None`).",
+          "required": null,
+          "in_list": true,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true,
           "precision": null
         },
         "preis_pro_einheit": {
@@ -166,7 +285,14 @@
           "type": "number",
           "subtype": null,
           "fulltype": "number",
-          "description": "A decimal number value (or `null`).",
+          "description": "A decimal number value (or `null`/`None`).",
+          "required": null,
+          "in_list": true,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true,
           "precision": null
         },
         "gesamtpreis": {
@@ -175,7 +301,14 @@
           "type": "number",
           "subtype": null,
           "fulltype": "number",
-          "description": "A decimal number value (or `null`).",
+          "description": "A decimal number value (or `null`/`None`).",
+          "required": null,
+          "in_list": false,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true,
           "precision": null
         },
         "bestelldatum": {
@@ -184,7 +317,14 @@
           "type": "date",
           "subtype": "date",
           "fulltype": "date/date",
-          "description": "A calendar date consisting of year, month and day. (Or `null`/`None`)\n\nThe field value will be a string in the format `<YYYY>-<MM>-<DD>` or `null`.\n\nFor example: `1642-12-25`."
+          "description": "A calendar date consisting of year, month and day. (Or `null`/`None`)\n\nThe field value will be a string in the format `<YYYY>-<MM>-<DD>` or `null`/`None`.\n\nFor example: `1642-12-25`.",
+          "required": null,
+          "in_list": false,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true
         },
         "erwartetes_lieferdatum": {
           "identifier": "erwartetes_lieferdatum",
@@ -192,7 +332,14 @@
           "type": "date",
           "subtype": "date",
           "fulltype": "date/date",
-          "description": "A calendar date consisting of year, month and day. (Or `null`/`None`)\n\nThe field value will be a string in the format `<YYYY>-<MM>-<DD>` or `null`.\n\nFor example: `1642-12-25`."
+          "description": "A calendar date consisting of year, month and day. (Or `null`/`None`)\n\nThe field value will be a string in the format `<YYYY>-<MM>-<DD>` or `null`/`None`.\n\nFor example: `1642-12-25`.",
+          "required": null,
+          "in_list": false,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true
         },
         "status": {
           "identifier": "status",
@@ -200,7 +347,14 @@
           "type": "lookup",
           "subtype": "select",
           "fulltype": "lookup/select",
-          "description": "One selected option of multiple available options (or `null`).\n\nThe available options are defined in the `lookup_data` attribute of this control's LivingApp.\n\nThe field value will be the key in this `lookup_data` attribute or `null`.",
+          "description": "One selected option of multiple available options (or `null`/`None`).\n\nThe available options are defined in the `lookup_data` attribute of this control.\n\nThe field value will be the key in this `lookup_data` attribute or `null`/`None`.",
+          "required": null,
+          "in_list": false,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true,
           "lookup_data": {
             "entwurf": "Entwurf",
             "bestellt": "Bestellt",
@@ -216,7 +370,14 @@
           "type": "string",
           "subtype": "text",
           "fulltype": "string/text",
-          "description": "A string value not longer than 4000 characters (or `null`)."
+          "description": "A string value not longer than 4000 characters (or `null`/`None`).",
+          "required": null,
+          "in_list": false,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true
         },
         "notizen": {
           "identifier": "notizen",
@@ -224,7 +385,14 @@
           "type": "string",
           "subtype": "textarea",
           "fulltype": "string/textarea",
-          "description": "A string value that can contain multiple lines of text (or `null`)."
+          "description": "A string value that can contain multiple lines of text (or `null`/`None`).",
+          "required": null,
+          "in_list": false,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true
         }
       }
     },
@@ -238,7 +406,14 @@
           "type": "string",
           "subtype": "text",
           "fulltype": "string/text",
-          "description": "A string value not longer than 4000 characters (or `null`)."
+          "description": "A string value not longer than 4000 characters (or `null`/`None`).",
+          "required": null,
+          "in_list": true,
+          "in_mobile_list": true,
+          "in_text": true,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true
         },
         "artikelnummer": {
           "identifier": "artikelnummer",
@@ -246,7 +421,14 @@
           "type": "string",
           "subtype": "text",
           "fulltype": "string/text",
-          "description": "A string value not longer than 4000 characters (or `null`)."
+          "description": "A string value not longer than 4000 characters (or `null`/`None`).",
+          "required": null,
+          "in_list": true,
+          "in_mobile_list": true,
+          "in_text": true,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true
         },
         "beschreibung": {
           "identifier": "beschreibung",
@@ -254,7 +436,14 @@
           "type": "string",
           "subtype": "textarea",
           "fulltype": "string/textarea",
-          "description": "A string value that can contain multiple lines of text (or `null`)."
+          "description": "A string value that can contain multiple lines of text (or `null`/`None`).",
+          "required": null,
+          "in_list": true,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true
         },
         "kategorie": {
           "identifier": "kategorie",
@@ -262,7 +451,14 @@
           "type": "lookup",
           "subtype": "select",
           "fulltype": "lookup/select",
-          "description": "One selected option of multiple available options (or `null`).\n\nThe available options are defined in the `lookup_data` attribute of this control's LivingApp.\n\nThe field value will be the key in this `lookup_data` attribute or `null`.",
+          "description": "One selected option of multiple available options (or `null`/`None`).\n\nThe available options are defined in the `lookup_data` attribute of this control.\n\nThe field value will be the key in this `lookup_data` attribute or `null`/`None`.",
+          "required": null,
+          "in_list": true,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true,
           "lookup_data": {
             "elektronik": "Elektronik",
             "lebensmittel": "Lebensmittel",
@@ -280,7 +476,14 @@
           "type": "number",
           "subtype": null,
           "fulltype": "number",
-          "description": "A decimal number value (or `null`).",
+          "description": "A decimal number value (or `null`/`None`).",
+          "required": null,
+          "in_list": true,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true,
           "precision": null
         },
         "verkaufspreis": {
@@ -289,7 +492,14 @@
           "type": "number",
           "subtype": null,
           "fulltype": "number",
-          "description": "A decimal number value (or `null`).",
+          "description": "A decimal number value (or `null`/`None`).",
+          "required": null,
+          "in_list": false,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true,
           "precision": null
         },
         "mindestbestand": {
@@ -298,7 +508,14 @@
           "type": "number",
           "subtype": null,
           "fulltype": "number",
-          "description": "A decimal number value (or `null`).",
+          "description": "A decimal number value (or `null`/`None`).",
+          "required": null,
+          "in_list": false,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true,
           "precision": null
         },
         "einheit": {
@@ -307,7 +524,14 @@
           "type": "lookup",
           "subtype": "select",
           "fulltype": "lookup/select",
-          "description": "One selected option of multiple available options (or `null`).\n\nThe available options are defined in the `lookup_data` attribute of this control's LivingApp.\n\nThe field value will be the key in this `lookup_data` attribute or `null`.",
+          "description": "One selected option of multiple available options (or `null`/`None`).\n\nThe available options are defined in the `lookup_data` attribute of this control.\n\nThe field value will be the key in this `lookup_data` attribute or `null`/`None`.",
+          "required": null,
+          "in_list": false,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true,
           "lookup_data": {
             "stueck": "St\u00fcck",
             "kg": "Kilogramm",
@@ -324,7 +548,14 @@
           "type": "string",
           "subtype": "text",
           "fulltype": "string/text",
-          "description": "A string value not longer than 4000 characters (or `null`)."
+          "description": "A string value not longer than 4000 characters (or `null`/`None`).",
+          "required": null,
+          "in_list": false,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true
         },
         "bild_url": {
           "identifier": "bild_url",
@@ -332,7 +563,14 @@
           "type": "string",
           "subtype": "url",
           "fulltype": "string/url",
-          "description": "An URL value according to RFC 3986 (or `null`)."
+          "description": "An URL value according to RFC 3986 (or `null`/`None`).",
+          "required": null,
+          "in_list": false,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true
         },
         "aktiv": {
           "identifier": "aktiv",
@@ -340,7 +578,14 @@
           "type": "lookup",
           "subtype": "select",
           "fulltype": "lookup/select",
-          "description": "One selected option of multiple available options (or `null`).\n\nThe available options are defined in the `lookup_data` attribute of this control's LivingApp.\n\nThe field value will be the key in this `lookup_data` attribute or `null`.",
+          "description": "One selected option of multiple available options (or `null`/`None`).\n\nThe available options are defined in the `lookup_data` attribute of this control.\n\nThe field value will be the key in this `lookup_data` attribute or `null`/`None`.",
+          "required": null,
+          "in_list": false,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true,
           "lookup_data": {
             "aktiv": "Aktiv",
             "inaktiv": "Inaktiv",
@@ -359,7 +604,14 @@
           "type": "applookup",
           "subtype": "select",
           "fulltype": "applookup/select",
-          "description": "A reference to another LivingApp record from a target lookup app (or `null`).\n\nThe field value will be a valid record URL in the form `https://<hostname>/rest/apps/<app-id>/records/<record-id>` or `null`.",
+          "description": "A reference to a LivingApp record from the target lookup app 'Produkte' with the id `69131a49a83d8e2ed62188f0` (or `null`/`None`).\n\nThe field value will be a valid record URL in the form `https://my.living-apps.de/rest/apps/69131a49a83d8e2ed62188f0/<record-id>` or `null`/`None`.",
+          "required": null,
+          "in_list": true,
+          "in_mobile_list": true,
+          "in_text": true,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true,
           "lookup_app": "https://my.living-apps.de/rest/apps/69131a49a83d8e2ed62188f0"
         },
         "lagerort": {
@@ -368,7 +620,14 @@
           "type": "lookup",
           "subtype": "select",
           "fulltype": "lookup/select",
-          "description": "One selected option of multiple available options (or `null`).\n\nThe available options are defined in the `lookup_data` attribute of this control's LivingApp.\n\nThe field value will be the key in this `lookup_data` attribute or `null`.",
+          "description": "One selected option of multiple available options (or `null`/`None`).\n\nThe available options are defined in the `lookup_data` attribute of this control.\n\nThe field value will be the key in this `lookup_data` attribute or `null`/`None`.",
+          "required": null,
+          "in_list": true,
+          "in_mobile_list": true,
+          "in_text": true,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true,
           "lookup_data": {
             "regal_a1": "Regal A1",
             "regal_a2": "Regal A2",
@@ -386,7 +645,14 @@
           "type": "number",
           "subtype": null,
           "fulltype": "number",
-          "description": "A decimal number value (or `null`).",
+          "description": "A decimal number value (or `null`/`None`).",
+          "required": null,
+          "in_list": true,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true,
           "precision": null
         },
         "reserviert": {
@@ -395,7 +661,14 @@
           "type": "number",
           "subtype": null,
           "fulltype": "number",
-          "description": "A decimal number value (or `null`).",
+          "description": "A decimal number value (or `null`/`None`).",
+          "required": null,
+          "in_list": true,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true,
           "precision": null
         },
         "verfuegbar": {
@@ -404,7 +677,14 @@
           "type": "number",
           "subtype": null,
           "fulltype": "number",
-          "description": "A decimal number value (or `null`).",
+          "description": "A decimal number value (or `null`/`None`).",
+          "required": null,
+          "in_list": true,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true,
           "precision": null
         },
         "letzte_inventur": {
@@ -413,7 +693,14 @@
           "type": "date",
           "subtype": "date",
           "fulltype": "date/date",
-          "description": "A calendar date consisting of year, month and day. (Or `null`/`None`)\n\nThe field value will be a string in the format `<YYYY>-<MM>-<DD>` or `null`.\n\nFor example: `1642-12-25`."
+          "description": "A calendar date consisting of year, month and day. (Or `null`/`None`)\n\nThe field value will be a string in the format `<YYYY>-<MM>-<DD>` or `null`/`None`.\n\nFor example: `1642-12-25`.",
+          "required": null,
+          "in_list": false,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true
         },
         "notizen": {
           "identifier": "notizen",
@@ -421,7 +708,14 @@
           "type": "string",
           "subtype": "textarea",
           "fulltype": "string/textarea",
-          "description": "A string value that can contain multiple lines of text (or `null`)."
+          "description": "A string value that can contain multiple lines of text (or `null`/`None`).",
+          "required": null,
+          "in_list": false,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true
         }
       }
     },
@@ -435,7 +729,14 @@
           "type": "applookup",
           "subtype": "select",
           "fulltype": "applookup/select",
-          "description": "A reference to another LivingApp record from a target lookup app (or `null`).\n\nThe field value will be a valid record URL in the form `https://<hostname>/rest/apps/<app-id>/records/<record-id>` or `null`.",
+          "description": "A reference to a LivingApp record from the target lookup app 'Bestellungen' with the id `69131a4fedccc6591086c8d9` (or `null`/`None`).\n\nThe field value will be a valid record URL in the form `https://my.living-apps.de/rest/apps/69131a4fedccc6591086c8d9/<record-id>` or `null`/`None`.",
+          "required": null,
+          "in_list": true,
+          "in_mobile_list": true,
+          "in_text": true,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true,
           "lookup_app": "https://my.living-apps.de/rest/apps/69131a4fedccc6591086c8d9"
         },
         "produkt": {
@@ -444,7 +745,14 @@
           "type": "applookup",
           "subtype": "select",
           "fulltype": "applookup/select",
-          "description": "A reference to another LivingApp record from a target lookup app (or `null`).\n\nThe field value will be a valid record URL in the form `https://<hostname>/rest/apps/<app-id>/records/<record-id>` or `null`.",
+          "description": "A reference to a LivingApp record from the target lookup app 'Produkte' with the id `69131a49a83d8e2ed62188f0` (or `null`/`None`).\n\nThe field value will be a valid record URL in the form `https://my.living-apps.de/rest/apps/69131a49a83d8e2ed62188f0/<record-id>` or `null`/`None`.",
+          "required": null,
+          "in_list": true,
+          "in_mobile_list": true,
+          "in_text": true,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true,
           "lookup_app": "https://my.living-apps.de/rest/apps/69131a49a83d8e2ed62188f0"
         },
         "lieferant": {
@@ -453,7 +761,14 @@
           "type": "applookup",
           "subtype": "select",
           "fulltype": "applookup/select",
-          "description": "A reference to another LivingApp record from a target lookup app (or `null`).\n\nThe field value will be a valid record URL in the form `https://<hostname>/rest/apps/<app-id>/records/<record-id>` or `null`.",
+          "description": "A reference to a LivingApp record from the target lookup app 'Lieferanten' with the id `69131a4ee2d56093dc1c94b0` (or `null`/`None`).\n\nThe field value will be a valid record URL in the form `https://my.living-apps.de/rest/apps/69131a4ee2d56093dc1c94b0/<record-id>` or `null`/`None`.",
+          "required": null,
+          "in_list": true,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true,
           "lookup_app": "https://my.living-apps.de/rest/apps/69131a4ee2d56093dc1c94b0"
         },
         "lieferdatum": {
@@ -462,7 +777,14 @@
           "type": "date",
           "subtype": "date",
           "fulltype": "date/date",
-          "description": "A calendar date consisting of year, month and day. (Or `null`/`None`)\n\nThe field value will be a string in the format `<YYYY>-<MM>-<DD>` or `null`.\n\nFor example: `1642-12-25`."
+          "description": "A calendar date consisting of year, month and day. (Or `null`/`None`)\n\nThe field value will be a string in the format `<YYYY>-<MM>-<DD>` or `null`/`None`.\n\nFor example: `1642-12-25`.",
+          "required": null,
+          "in_list": true,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true
         },
         "gelieferte_menge": {
           "identifier": "gelieferte_menge",
@@ -470,7 +792,14 @@
           "type": "number",
           "subtype": null,
           "fulltype": "number",
-          "description": "A decimal number value (or `null`).",
+          "description": "A decimal number value (or `null`/`None`).",
+          "required": null,
+          "in_list": true,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true,
           "precision": null
         },
         "lagerort": {
@@ -479,7 +808,14 @@
           "type": "lookup",
           "subtype": "select",
           "fulltype": "lookup/select",
-          "description": "One selected option of multiple available options (or `null`).\n\nThe available options are defined in the `lookup_data` attribute of this control's LivingApp.\n\nThe field value will be the key in this `lookup_data` attribute or `null`.",
+          "description": "One selected option of multiple available options (or `null`/`None`).\n\nThe available options are defined in the `lookup_data` attribute of this control.\n\nThe field value will be the key in this `lookup_data` attribute or `null`/`None`.",
+          "required": null,
+          "in_list": false,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true,
           "lookup_data": {
             "regal_a1": "Regal A1",
             "regal_a2": "Regal A2",
@@ -497,7 +833,14 @@
           "type": "lookup",
           "subtype": "select",
           "fulltype": "lookup/select",
-          "description": "One selected option of multiple available options (or `null`).\n\nThe available options are defined in the `lookup_data` attribute of this control's LivingApp.\n\nThe field value will be the key in this `lookup_data` attribute or `null`.",
+          "description": "One selected option of multiple available options (or `null`/`None`).\n\nThe available options are defined in the `lookup_data` attribute of this control.\n\nThe field value will be the key in this `lookup_data` attribute or `null`/`None`.",
+          "required": null,
+          "in_list": false,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true,
           "lookup_data": {
             "bestanden": "Bestanden \u2705",
             "mit_maengeln": "Mit M\u00e4ngeln \u26a0\ufe0f",
@@ -511,7 +854,14 @@
           "type": "string",
           "subtype": "textarea",
           "fulltype": "string/textarea",
-          "description": "A string value that can contain multiple lines of text (or `null`)."
+          "description": "A string value that can contain multiple lines of text (or `null`/`None`).",
+          "required": null,
+          "in_list": false,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true
         },
         "lieferscheinnummer": {
           "identifier": "lieferscheinnummer",
@@ -519,7 +869,14 @@
           "type": "string",
           "subtype": "text",
           "fulltype": "string/text",
-          "description": "A string value not longer than 4000 characters (or `null`)."
+          "description": "A string value not longer than 4000 characters (or `null`/`None`).",
+          "required": null,
+          "in_list": false,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true
         },
         "erfasst_von": {
           "identifier": "erfasst_von",
@@ -527,7 +884,14 @@
           "type": "string",
           "subtype": "text",
           "fulltype": "string/text",
-          "description": "A string value not longer than 4000 characters (or `null`)."
+          "description": "A string value not longer than 4000 characters (or `null`/`None`).",
+          "required": null,
+          "in_list": false,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true
         },
         "erfassungsdatum": {
           "identifier": "erfassungsdatum",
@@ -535,7 +899,14 @@
           "type": "date",
           "subtype": "datetimeminute",
           "fulltype": "date/datetimeminute",
-          "description": "A specific moment in time consisting of year, month, day, hour and minute. (Or `null`/`None`)\n\nThe field value will be a string in the format `<YYYY>-<MM>-<DD>T<HH>:<MM>` or `null`.\n\nFor example: `1879-03-14T11:30`."
+          "description": "A specific moment in time consisting of year, month, day, hour and minute. (Or `null`/`None`)\n\nThe field value will be a string in the format `<YYYY>-<MM>-<DD>T<HH>:<MM>` or `null`/`None`.\n\nFor example: `1879-03-14T11:30`.",
+          "required": null,
+          "in_list": false,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true
         },
         "notizen": {
           "identifier": "notizen",
@@ -543,7 +914,14 @@
           "type": "string",
           "subtype": "textarea",
           "fulltype": "string/textarea",
-          "description": "A string value that can contain multiple lines of text (or `null`)."
+          "description": "A string value that can contain multiple lines of text (or `null`/`None`).",
+          "required": null,
+          "in_list": false,
+          "in_mobile_list": false,
+          "in_text": false,
+          "in_structured_search": false,
+          "in_fulltext_search": null,
+          "in_expert_search": true
         }
       }
     }

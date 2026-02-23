@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
 export default defineConfig({ 
-  base: '/69131a69a5c535ea58cf8421/',
+  base: '/github/69131a69a5c535ea58cf8421/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
@@ -13,6 +13,8 @@ export default defineConfig({
     },
   },
   server: {
+    host: true,
+    allowedHosts: [".e2b.app"],
     proxy: {
       '/api/rest': {
         target: 'https://my.living-apps.de',
